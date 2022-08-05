@@ -1,4 +1,3 @@
-const User = require("../models/user.js");
 const argon2 = require("argon2");
 const jwt = require("jsonwebtoken");
 const db = require("../config/database");
@@ -38,7 +37,6 @@ const createSendToken = (user, statusCode, req, res) => {
 const findUser = async (username) => {
   const query = `SELECT * FROM users WHERE username = ?`;
   const results = await db.promise().query(query, [username]);
-  // console.log(results)
   return results[0][0];
 };
 
@@ -83,6 +81,7 @@ exports.login = async (req, res) => {
 
   try {
     const user = await findUser(username);
+    console.log(user)
 
     if(!user) return res.json({ message: "Invalid username or password." });
     if (await argon2.verify(user.password, password)) {
@@ -116,7 +115,7 @@ exports.protectedRoute = async (req, res, next) => {
 
   //return if no token
   if (!token) {
-    return json
+    return res
       .status(401)
       .json({ message: "You are not logged in. Please login to gain access." });
   }
@@ -127,11 +126,10 @@ exports.protectedRoute = async (req, res, next) => {
   // 3) Check if user still exists
   const currentUser = await findUser(decodedToken.username);
   if (!currentUser) {
-    return json.status(401).json({
+    return res.status(401).json({
       message: "The user belonging to this token does no longer exist ",
     });
   }
-  // console.log(currentUser)
 
   // // 4) Check if user changed password after the token was issued
   // if (currentUser.changedPasswordAfter(decoded.iat)) {
@@ -145,35 +143,9 @@ exports.protectedRoute = async (req, res, next) => {
   next();
 };
 
-// Only for rendered pages, no errors!
-exports.isLoggedIn = async (req, res, next) => {
-  if (req.cookies.jwt) {
-    try {
-      // 1) verify token
-      const decodedToken = jwt.verify(
-        req.cookies.jwt,
-        `${process.env.JWT_SECRET}`
-      );
-
-      // 2) Check if user still exists
-      const currentUser = await User.findByPk(decoded.id);
-      if (!currentUser) {
-        return next();
-      }
-
-      // 3) Check if user changed password after the token was issued
-      // if (currentUser.changedPasswordAfter(decoded.iat)) {
-      //   return next();
-      // }
-
-      // THERE IS A LOGGED IN USER
-      res.locals.user = currentUser;
-      return next();
-    } catch (err) {
-      return next();
-    }
-  }
-  next();
+exports.restrictMe = (req, res, next) => {
+  if(req.user.username !== req.body.username) return res.status(403).json({message: "You do not have permission to perform this actiona."})
+  next()
 };
 
 exports.restrictedRoute = (roles) => {
