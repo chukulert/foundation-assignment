@@ -27,10 +27,7 @@ const createSendToken = (user, statusCode, req, res) => {
 
   res.status(statusCode).json({
     status: "success",
-    token,
-    data: {
-      user,
-    },
+    user: {...user, token}
   });
 };
 
@@ -74,20 +71,21 @@ exports.signup = async (req, res, next) => {
 };
 
 exports.login = async (req, res) => {
+
   const username = req.body.username;
   const password = req.body.password;
   if (!username || !password)
-    return res.json({ message: "Please enter a username and password" });
+    return res.status(401).json({ message: "Please enter a valid username and password" });
 
   try {
     const user = await findUser(username);
     console.log(user)
 
-    if(!user) return res.json({ message: "Invalid username or password." });
+    if(!user) return res.status(401).json({ message: "Invalid username or password." });
     if (await argon2.verify(user.password, password)) {
       createSendToken(user, 200, req, res);
     } else {
-      return res.json({ message: "Invalid username or password" });
+      return res.status(401).json({ message: "Invalid username or password" });
     }
   } catch (error) {
     res.json({ message: error.message });
@@ -120,7 +118,7 @@ exports.protectedRoute = async (req, res, next) => {
       .json({ message: "You are not logged in. Please login to gain access." });
   }
 
-  // 2) Verification token
+  // 2) Verify token authenticity
   const decodedToken = jwt.verify(token, `${process.env.JWT_SECRET}`);
 
   // 3) Check if user still exists
@@ -130,22 +128,15 @@ exports.protectedRoute = async (req, res, next) => {
       message: "The user belonging to this token does no longer exist ",
     });
   }
-
-  // // 4) Check if user changed password after the token was issued
-  // if (currentUser.changedPasswordAfter(decoded.iat)) {
-  //   return json.status(401).json({message: 'User recently changed password! Please log in again.'})
-  // }
-
-  // GRANT ACCESS TO PROTECTED ROUTE
   req.user = currentUser;
   res.locals.user = currentUser;
-
   next();
 };
 
 exports.restrictMe = (req, res, next) => {
-  if(req.user.username !== req.body.username) return res.status(403).json({message: "You do not have permission to perform this actiona."})
-  next()
+  if(req.user.username !== req.body.username) {
+    return res.status(403).json({message: "You do not have permission to perform this actiona."})}
+  next();
 };
 
 exports.restrictedRoute = (roles) => {

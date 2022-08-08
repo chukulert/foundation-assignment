@@ -9,7 +9,7 @@ const findUser = async (username) => {
 };
 
 const findUserGroups = async (userid) => {
-  const query = `SELECT * FROM assignment.groups t1 INNER JOIN assignment.user_groups t2 ON t1.id = t2.group_id INNER JOIN assignment.users t3 ON t2.user_id = t3.id WHERE t3.id = ?`;
+  const query = `SELECT t1.*, t2.name FROM assignment.user_groups t1 INNER JOIN assignment.groups t2 ON t1.group_id = t2.id`;
   const results = await db.promise().query(query, [userid]);
   return results[0];
 };
@@ -31,23 +31,23 @@ exports.getAllUsers = async (req, res) => {
   }
 };
 
-exports.getUserById = async (req, res) => {
-  try {
-    db.query(
-      "SELECT id, name, email, isActive FROM users WHERE id = ?",
-      [req.params.id],
-      function (err, results) {
-        if (err) {
-          res.status(400).json({ message: err.message });
-        } else {
-          res.status(200).json(results);
-        }
-      }
-    );
-  } catch (error) {
-    res.json({ message: error.message });
-  }
-};
+// exports.getUserById = async (req, res) => {
+//   try {
+//     db.query(
+//       "SELECT id, name, email, isActive FROM users WHERE id = ?",
+//       [req.params.id],
+//       function (err, results) {
+//         if (err) {
+//           res.status(400).json({ message: err.message });
+//         } else {
+//           res.status(200).json(results);
+//         }
+//       }
+//     );
+//   } catch (error) {
+//     res.json({ message: error.message });
+//   }
+// };
 
 exports.createUser = async (req, res) => {
   const { username, password, email, groups, role } = req.body;
@@ -117,8 +117,6 @@ exports.updateUser = async (req, res) => {
     const role = req.body.role;
     const groups = req.body.groups //[groupId, groupId, groupId]
 
-//   user.groupIDs
-
   try {
     const query1 = `UPDATE users SET isActive = ?, email = ?, role = ? WHERE username = ?`;
     const query2 = `DELETE FROM assignment.user_groups WHERE user_id = ?`
@@ -131,7 +129,7 @@ exports.updateUser = async (req, res) => {
         db.promise().query(query, [id, grp])
     })
     await Promise.all(addGroups)
-    return res.status(200).json({ message: `success` });
+    return res.status(200).json({ message: "User successfully updated." });
   } catch (error) {
     res.status(400).json({ message: error.message });
   }

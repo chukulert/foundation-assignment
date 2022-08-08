@@ -1,5 +1,3 @@
-const db = require("../config/database");
-
 exports.checkGroup = (userid, groupname) => {};
 
 exports.mergeResults = (userResults, groupResults) => {

@@ -6,8 +6,8 @@ const useAuth = () => {
 
   useEffect(() => {
     const userData = JSON.parse(localStorage.getItem("userData"))
-    console.log({ userData });
-    if (Object.keys(userData).length === 0) return;
+
+    if (!userData) return;
 
     const decodedToken = decode(userData.token);
 
@@ -16,6 +16,7 @@ const useAuth = () => {
       return;
     }
     /**To be deleted later */
+
     setUser(userData);
 
     // const isDataValid = verifyUser(userData)
@@ -34,7 +35,7 @@ const useAuth = () => {
   //   }
   // }
 
-  return { user, setUser };
+  return [user, setUser];
 };
 
 export default useAuth;

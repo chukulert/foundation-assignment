@@ -3,14 +3,15 @@ import useAuth from '../hooks/useAuth'
 import React from 'react'
 import * as api from '../api'
 
-export const AuthContext = createContext(null)
+export const AuthContext = createContext()
 
 const AuthProvider = (props) => {
   const [user, setUser] = useAuth()
+  console.log(user)
 
   const signUp = async (newUserData) => {
     const { data: user } = await api.signup(newUserData)
-    console.log(user)
+
 
     if (user.token) {
       localStorage.setItem('userData', JSON.stringify(user))
@@ -20,15 +21,14 @@ const AuthProvider = (props) => {
   }
 
   const logIn = async (userData) => {
-    const { data: user } = await api.login(userData)
-    console.log(user)
+    const { data: {user} } = await api.login(userData)
 
     if (user.token) {
       localStorage.setItem('userData', JSON.stringify(user))
       setUser(user)
     }
 
-    if (!user.isActive) {
+    if (user.isActive !== '1') {
       localStorage.clear()
       setUser(null)
       alert('Account is blocked')
@@ -36,7 +36,8 @@ const AuthProvider = (props) => {
     return user;
   }
 
-  const signOut = () => {
+  const signOut =  () => {
+    api.logout()
     localStorage.clear()
     setUser(null)
   }

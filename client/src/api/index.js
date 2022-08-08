@@ -25,16 +25,16 @@ URL.interceptors.request.use((req) => {
 /** APIs */
 
 //users
-export const signup = URL.post(`/users/signup`)
-export const login = URL.post(`/users/login`)
-export const logout = URL.post(`/users/logout`)
-export const getMe = URL.get(`/users/me`)
-export const updateMe = URL.patch(`/users/me`)
+export const signup = (userData) => URL.post(`/users/signup`, userData)
+export const login = (userData) =>  URL.post(`/users/login`, userData)
+export const logout = () => URL.post(`/users/logout`)
+export const getMe = () => URL.get(`/users/me`)
+export const updateMe = (userData) => URL.patch(`/users/me`, userData)
 
 //admin user management
-export const getAllUsers = URL.get(`/users/all`)
-export const createUser = URL.post(`/users/createUser`)
-export const updateUser = URL.post(`/users/updateUser`)
-export const updatePassword = URL.post(`/users/updatePassword`)
-
+export const getAllUsers = () => URL.get(`/users/all`)
+export const createUser = (userData) => URL.post(`/users/createUser`, userData)
+export const updateUser = (userData) => URL.post(`/users/updateUser`, userData)
+export const updatePassword = (userData) => URL.post(`/users/updatePassword`, userData)
+export const getAllGroups = () => URL.get(`/users/allgroups`) 
 
