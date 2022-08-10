@@ -1,14 +1,14 @@
 import { Navigate } from "react-router-dom";
-import useAuth from "../hooks/useAuth";
 import { useLocation } from "react-router-dom";
 import { AuthContext } from "../context/AuthContext";
 import { useContext } from "react";
 
-const Protected = ({ user, admin, children }) => {
+const Protected = ({ admin, children }) => {
+  const {user} = useContext(AuthContext)
   const location = useLocation();
-  
+
   if (!user) {
-    console.log("no user");
+    console.log('no user')
     return <Navigate to="/login" replace state={{ path: location.pathname }} />;
   }
   if (admin) {

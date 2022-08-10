@@ -1,33 +1,107 @@
-import { useEffect } from "react";
 import Container from "react-bootstrap/Container";
-import useAuth from "../hooks/useAuth";
-import { useNavigate } from "react-router-dom";
-import { useContext } from "react";
+import { useContext, useState } from "react";
 import { AuthContext } from "../context/AuthContext";
-import NavBar from "../components/NavBar";
-import UserManagement from "./UserManagement";
+import Table from "react-bootstrap/Table";
+import EditPersonalForm from "../components/EditPersonalForm";
+import * as api from "../api/index";
+import Modal from "react-bootstrap/Modal";
+import Button from "react-bootstrap/Button";
+import Toast from "react-bootstrap/Toast";
+import ToastContainer from "react-bootstrap/ToastContainer";
 
 const Home = () => {
- const {user} = useContext(AuthContext)
-    const navigate = useNavigate()
-    console.log(user)
+  const { user, setUser } = useContext(AuthContext);
+  const [showModal, setShowModal] = useState(false);
+  const [modalType, setModalType] = useState("");
+  const [toastMsg, setToastMsg] = useState(null);
+  const [showToast, setShowToast] = useState(false);
+
+  const handleShowModal = (modalType) => {
+    modalType ? setModalType(modalType) : setModalType(null);
+    showModal ? setShowModal(false) : setShowModal(true);
+  };
+
+  const updatePersonalDetails = async (data) => {
+    try {
+      await api.updateMe(data);
+      const updatedUser = await api.getMe();
+
+      setUser({
+        token: user.token,
+        ...updatedUser.data,
+      });
+      handleShowModal();
+      setToastMsg("Details updated successfully.");
+    } catch (error) {
+      setToastMsg(error.response.data.message);
+    }
+    setShowToast(true);
+  };
 
   return (
     <>
-    <NavBar user={user}/>
-    <Container>
-      {user && (
-        <>
-          <h1>Home</h1>
-          <h2>{user.email}</h2>
-          <h2>{user.password}</h2>
-          <h2>{user.role}</h2>
-          <h2>{user.isActive}</h2>
-        </>
-      )}
-      {user.role === 'admin' && <UserManagement user={user} />}
+      <Container>
+        {user && (
+          <>
+            <h1>Home</h1>
+            <Table striped bordered hover>
+              <thead>
+                <tr>
+                  <th>Username</th>
+                  <th>Email</th>
+                  <th>Role</th>
+                  <th>Edit</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>{user.username}</td>
+                  <td>{user.email}</td>
+                  <td>{user.role}</td>
+                  <td>
+                    <Button
+                      onClick={() => handleShowModal("email")}
+                      variant="primary"
+                    >
+                      Email
+                    </Button>
+                    <Button
+                      onClick={() => handleShowModal("password")}
+                      variant="secondary"
+                    >
+                      Password
+                    </Button>
+                  </td>
+                </tr>
+              </tbody>
+            </Table>
+          </>
+        )}
+      </Container>
 
-    </Container>
+      <Modal show={showModal} onHide={handleShowModal}>
+        <Modal.Header closeButton>
+          <Modal.Title>
+            Change {modalType === "password" ? "Password" : "Email"}
+          </Modal.Title>
+        </Modal.Header>
+        <EditPersonalForm
+          user={user}
+          modalType={modalType}
+          updatePersonalDetails={updatePersonalDetails}
+        />
+      </Modal>
+
+      <ToastContainer position="top-end" className="p-3">
+        <Toast
+          onClose={() => setShowToast(false)}
+          show={showToast}
+          delay={3500}
+          autohide
+        >
+          <Toast.Body>{toastMsg}</Toast.Body>
+        </Toast>
+      </ToastContainer>
     </>
   );
 };

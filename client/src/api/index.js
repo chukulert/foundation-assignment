@@ -34,7 +34,7 @@ export const updateMe = (userData) => URL.patch(`/users/me`, userData)
 //admin user management
 export const getAllUsers = () => URL.get(`/users/all`)
 export const createUser = (userData) => URL.post(`/users/createUser`, userData)
-export const updateUser = (userData) => URL.post(`/users/updateUser`, userData)
-export const updatePassword = (userData) => URL.post(`/users/updatePassword`, userData)
+export const updateUser = (userData) => URL.patch(`/users/updateUser`, userData)
+export const updatePassword = (userData) => URL.patch(`/users/updatePassword`, userData)
 export const getAllGroups = () => URL.get(`/users/allgroups`) 
 

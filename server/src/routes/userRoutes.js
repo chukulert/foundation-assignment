@@ -24,8 +24,8 @@ router.use(authController.restrictedRoute('admin'));
 router.get("/allgroups", groupController.getAllGroups)
 
 router.get("/all", userController.getAllUsers);
+router.route("/createUser").post(userController.createUser);
 router.route("/updateUser").patch(userController.updateUser);
 router.route("/updatePassword").patch(userController.updateUserPassword);
-router.route("/createUser").post(userController.createUser);
 
 module.exports = router;

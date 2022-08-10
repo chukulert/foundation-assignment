@@ -2,9 +2,8 @@ import { useEffect } from "react"
 import { useState } from "react"
 import Button from "react-bootstrap/esm/Button"
 
-
 const UserTableItem = (props) => {
-    const {user, handleEditModal} = props
+    const {user, handleEditModal, handleResetPasswordModal} = props
     const [userGroups, setUserGroups] = useState('')
 
     useEffect(() => {
@@ -16,18 +15,24 @@ const UserTableItem = (props) => {
     }, [user])
 
     const handleEdit = () => {
-        handleEditModal(user)
+        handleEditModal(user, "edit")
+    }
+
+    const handleResetPassword = () => {
+        handleResetPasswordModal(user)
     }
 
     return (
         <tr>
-        <th>{user.id}</th>
-        <th>{user.username}</th>
-        <th>{user.email}</th>
-        <th>{user.role}</th>
-        <th>{userGroups}</th>
-        <th>{user.isActive === '1' ? 'Enabled' : 'Disabled'}</th>
-        <th ><Button onClick={handleEdit} variant="primary">Edit</Button></th>
+        <td>{user.id}</td>
+        <td>{user.username}</td>
+        <td>{user.email}</td>
+        <td>{user.role}</td>
+        <td>{userGroups}</td>
+        <td className={user.isActive === '1' ? "text-success" : "text-danger"}>{user.isActive === '1' ? 'Enabled' : 'Disabled'}</td>
+        <td className="d-flex"><Button onClick={handleEdit} variant="primary">Edit</Button>
+        <Button onClick={handleResetPassword} variant="secondary">Password</Button>
+        </td>
       </tr>
     )
 }

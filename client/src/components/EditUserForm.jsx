@@ -7,18 +7,19 @@ import { useEffect } from "react";
 import Select from "react-select";
 
 const EditUserForm = (props) => {
-  const { user, allGroupsData } = props;
+  const { user, allGroupsData, modalType, submitEditUser, submitNewUser } =
+    props;
   const [selectedArray, setSelectedArray] = useState([]);
   const [optionsArray, setOptionsArray] = useState([]);
   const [userStatus, setUserStatus] = useState("");
   const [userRole, setUserRole] = useState("");
   const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
   const [email, setEmail] = useState("");
 
-  console.log(selectedArray);
-  console.log(optionsArray);
   useEffect(() => {
     if (user) {
+      setSelectedArray([]);
       setUserRole(user.role);
       setUserStatus(user.isActive);
       setEmail(user.email);
@@ -31,8 +32,6 @@ const EditUserForm = (props) => {
           };
         });
         setSelectedArray(formattedGroupsArray);
-      } else {
-        setSelectedArray([]);
       }
     }
     if (allGroupsData) {
@@ -46,25 +45,32 @@ const EditUserForm = (props) => {
     }
   }, [user, allGroupsData]);
 
-  //   const handleSelectChange = (e) => {
-  //     setSelectedArray(e)
-  //   }
-
   const handleFormSubmit = (e) => {
     e.preventDefault();
     const data = {
-      username: username,
-      email: email,
+      id: user?.id,
+      username,
+      password,
+      email,
       isActive: userStatus,
       role: userRole,
-      groups: selectedArray,
+      groups: selectedArray.map((group) => group.value),
     };
-
     console.log(data);
+    if (modalType === "edit") {
+      submitEditUser(data);
+    }
+    if (modalType === "new") {
+      submitNewUser(data);
+      setUsername("");
+      setPassword("");
+      setEmail("");
+      setSelectedArray([]);
+    }
   };
 
   return (
-    <Form onSubmit={handleFormSubmit}>
+    <Form onSubmit={handleFormSubmit} className="p-3">
       <Form.Group className="mb-3" controlId="floatingUsername">
         <FloatingLabel
           controlId="floatingUsername"
@@ -80,6 +86,24 @@ const EditUserForm = (props) => {
           />
         </FloatingLabel>
       </Form.Group>
+
+      {modalType === "new" && (
+        <Form.Group className="mb-3" controlId="floatingPassword">
+          <FloatingLabel
+            controlId="floatingPassword"
+            label="Password"
+            className="text-muted"
+          >
+            <Form.Control
+              type="password"
+              placeholder="Enter password"
+              onChange={(e) => setPassword(e.target.value)}
+              required
+              value={password || ""}
+            />
+          </FloatingLabel>
+        </Form.Group>
+      )}
 
       <Form.Group className="mb-3" controlId="formEmail">
         <FloatingLabel
@@ -100,10 +124,9 @@ const EditUserForm = (props) => {
         <FloatingLabel controlId="formRole" label="Role" className="text-muted">
           <Form.Select
             aria-label="Role"
-            value={userRole}
+            value={userRole || "user"}
             onChange={(e) => setUserRole(e.target.value)}
           >
-            <option>Select role</option>
             <option value="admin">Admin</option>
             <option value="user">User</option>
           </Form.Select>
@@ -118,26 +141,24 @@ const EditUserForm = (props) => {
         >
           <Form.Select
             aria-label="Status"
-            value={userStatus || ""}
+            value={userStatus || "1"}
             onChange={(e) => setUserStatus(e.target.value)}
           >
-            <option>Select status</option>
             <option value="1">Enabled</option>
             <option value="0">Disabled</option>
           </Form.Select>
         </FloatingLabel>
       </Form.Group>
-      
-        <Select
-          options={optionsArray}
-          closeMenuOnSelect={false}
-          isMulti
-          defaultValue={selectedArray}
-          onChange={(values) => setSelectedArray(values)}
-        />
- 
 
-      <Button variant="primary" type="submit">
+      <Select
+        options={optionsArray}
+        closeMenuOnSelect={false}
+        isMulti
+        value={selectedArray}
+        onChange={(values) => setSelectedArray(values)}
+        placeholder="Select Groups"
+      />
+      <Button variant="primary" type="submit" className="mt-3">
         Submit
       </Button>
     </Form>

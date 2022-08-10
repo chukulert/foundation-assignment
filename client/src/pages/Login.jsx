@@ -5,7 +5,6 @@ import FloatingLabel from "react-bootstrap/FloatingLabel";
 import { useState, useRef, useContext } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { AuthContext } from "../context/AuthContext";
-import NavBar from "../components/NavBar";
 
 const Login = () => {
   const [error, setError] = useState(null);
@@ -15,18 +14,18 @@ const Login = () => {
   const { logIn } = useContext(AuthContext);
   const { state } = useLocation();
 
-  const handleLoginSubmit = (e) => {
+  const handleLoginSubmit = async (e) => {
     e.preventDefault();
 
     try {
-      logIn({
+      await logIn({
         username: usernameRef.current.value,
         password: passwordRef.current.value,
-      }).then(() => {
-        console.log("done");
+      })
         navigate(state?.path || "/");
-      });
+    
     } catch (error) {
+      console.log(error.response.data.message)
       setError(error.response.data.message);
     }
   };
@@ -65,11 +64,13 @@ const Login = () => {
               />
             </FloatingLabel>
           </Form.Group>
-
+          <div className="text-danger ml-3">
+          {error}
+          </div>
           <Button variant="primary" type="submit">
             Submit
           </Button>
-          {error}
+        
         </Form>
       </Container>
     </>
