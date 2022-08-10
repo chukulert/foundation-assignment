@@ -79,7 +79,6 @@ exports.login = async (req, res) => {
 
   try {
     const user = await findUser(username);
-    console.log(user)
 
     if(!user) return res.status(401).json({ message: "Invalid username or password." });
     if (await argon2.verify(user.password, password)) {

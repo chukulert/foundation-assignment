@@ -1,6 +1,6 @@
 const db = require("../config/database");
 const argon2 = require("argon2");
-const { mergeResults } = require("../utils/helpers");
+const { mergeResults, compareGroups } = require("../utils/helpers");
 
 const findUser = async (username) => {
   const query = `SELECT t1.id, t1.username, t1.email FROM users t1 WHERE username = ?`;
@@ -68,9 +68,8 @@ exports.createUser = async (req, res) => {
       .status(400)
       .json({ message: "A username and password is required." });
   }
- 
+
   if (!validPassword(password)) {
-    console.log('invalud pass')
     return res.status(400).json({
       message:
         "Password has to contain at least 8-10 characters, and at least an alphabet, number and special character.",
@@ -111,11 +110,11 @@ exports.getMe = async (req, res) => {
   const username = req.user.username;
   try {
     const query = `SELECT * FROM users WHERE username = ? AND isActive = ?`;
-    const results = await db.promise().query(query, [username, '1']);
-    const user = results[0][0]
+    const results = await db.promise().query(query, [username, "1"]);
+    const user = results[0][0];
     if (user) {
       user.password = undefined;
-      console.log(user)
+
       return res.status(200).json(user);
     } else {
       return res.status(401).json({ message: "User profile not found." });
@@ -160,22 +159,34 @@ exports.updateUser = async (req, res) => {
   const isActive = req.body.isActive;
   const email = req.body.email;
   const role = req.body.role;
-  const groups = req.body.groups; //[groupId, groupId, groupId]
+  const groups = req.body.groups || []; //[groupId, groupId, groupId]
+  const userGroups = req.body.userGroups || [];
 
   try {
-    const query1 = `UPDATE users SET isActive = ?, email = ?, role = ? WHERE username = ?`;
-    const query2 = `DELETE FROM assignment.user_groups WHERE user_id = ?`;
-
+    const query = `UPDATE users SET isActive = ?, email = ?, role = ? WHERE username = ?`;
     const updateUserDetails = db
       .promise()
-      .query(query1, [isActive, email, role, username]);
-    const removeUserGroups = db.promise().query(query2, [id]);
-    await Promise.all([updateUserDetails, removeUserGroups]);
-    const addGroups = groups.map(async (grp) => {
+      .query(query, [isActive, email, role, username]);
+
+      /**returns a hashmap 
+        {
+          add: [groupId],
+          remove: [groupId]
+        }
+      */
+    const groupsQueries = compareGroups(userGroups, groups); 
+
+    const addGroups = groupsQueries.add.map(async (grp) => {
       const query = `INSERT INTO assignment.user_groups (user_id, group_id) VALUES (?, ?)`;
       db.promise().query(query, [id, grp]);
     });
-    await Promise.all(addGroups);
+
+    const removeGroups = groupsQueries.remove.map(async (grp) => {
+      const query = `DELETE FROM assignment.user_groups WHERE user_id = ? AND group_id = ?`;
+      db.promise().query(query, [id, grp]);
+    });
+
+    await Promise.all([...addGroups, ...removeGroups, updateUserDetails]);
     return res.status(200).json({ message: "User successfully updated." });
   } catch (error) {
     res.status(400).json({ message: error.message });

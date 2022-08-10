@@ -55,6 +55,7 @@ const EditUserForm = (props) => {
       isActive: userStatus,
       role: userRole,
       groups: selectedArray.map((group) => group.value),
+      userGroups: user?.groupIDs
     };
     console.log(data);
     if (modalType === "edit") {

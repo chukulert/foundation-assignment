@@ -12,7 +12,6 @@ const NavBar = () => {
 
   const logout = async () => {
     await signOut();
-    console.log("signed out");
     navigate("/login", { replace: true });
   };
 

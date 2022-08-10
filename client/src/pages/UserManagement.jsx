@@ -58,7 +58,8 @@ const UserManagement = () => {
       await api.updateUser(data);
       await fetchAllUsersData();
       setTargetUser(null);
-      setToastMsg("User updated successfully");
+      setShowModal(false)
+      setToastMsg(`Account ${data.username} updated successfully`);
     } catch (error) {
       setToastMsg(error.response.data.message);
     }
@@ -69,11 +70,9 @@ const UserManagement = () => {
     console.log(data)
     try {
       await api.createUser(data);
-      //show toast notification}
-
       await fetchAllUsersData();
       setTargetUser(null);
-      setToastMsg("User created successfully");
+      setToastMsg(`Account ${data.username} created successfully`);
     } catch (error) {
       setToastMsg(error.response.data.message);
     }
