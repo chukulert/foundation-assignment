@@ -132,12 +132,6 @@ exports.protectedRoute = async (req, res, next) => {
   next();
 };
 
-exports.restrictMe = (req, res, next) => {
-  if(req.user.username !== req.body.username) {
-    return res.status(403).json({message: "You do not have permission to perform this actiona."})}
-  next();
-};
-
 exports.restrictedRoute = (roles) => {
   return (req, res, next) => {
     // roles ['admin' || 'user']

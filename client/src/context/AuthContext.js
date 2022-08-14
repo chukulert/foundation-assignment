@@ -7,11 +7,9 @@ export const AuthContext = createContext()
 
 const AuthProvider = (props) => {
   const [user, setUser] = useAuth()
-  console.log(user)
-
+  
   const signUp = async (newUserData) => {
     const { data: user } = await api.signup(newUserData)
-
 
     if (user.token) {
       localStorage.setItem('userData', JSON.stringify(user))

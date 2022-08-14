@@ -27,6 +27,9 @@ const NavBar = () => {
             <Nav.Link as={Link} to="home">
               Home
             </Nav.Link>
+            <Nav.Link as={Link} to="profile">
+              Profile
+            </Nav.Link>
             {user && user.role === "admin" && (
               <Nav.Link as={Link} to="user-management">
                 User
@@ -37,7 +40,7 @@ const NavBar = () => {
                 Group
               </Nav.Link>
             )}
-            {user && <Nav.Link onClick={logout}>Logout</Nav.Link>}
+            <Nav.Link onClick={logout}>Logout</Nav.Link>
           </Nav>
         </Navbar.Collapse>
       </Container>

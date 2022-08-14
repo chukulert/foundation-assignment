@@ -1,13 +1,12 @@
 import { useEffect, useState } from "react";
 import * as api from "../api/index";
 import UserTable from "../components/UserTable/UserTable";
-import Modal from "react-bootstrap/Modal";
 import EditUserForm from "../components/EditUserForm";
 import Button from "react-bootstrap/Button";
 import Container from "react-bootstrap/Container";
 import PasswordResetForm from "../components/PasswordResetForm";
-import Toast from "react-bootstrap/Toast";
-import ToastContainer from "react-bootstrap/ToastContainer";
+import AppModal from "../components/AppModal";
+import AppToast from "../components/Toast";
 
 const UserManagement = () => {
   const [allUserData, setAllUserData] = useState([]);
@@ -21,10 +20,15 @@ const UserManagement = () => {
   const [showToast, setShowToast] = useState(false);
 
   useEffect(() => {
+    const controller = new AbortController();
     const fetchData = async () => {
       await Promise.all([fetchAllUsersData(), fetchAllGroupsData()]);
     };
     fetchData();
+
+    return () => {
+      controller.abort()
+    }
   }, []);
 
   const fetchAllUsersData = async () => {
@@ -41,6 +45,7 @@ const UserManagement = () => {
     showModal ? setShowModal(false) : setShowModal(true);
     setModalType(modalType);
   };
+  console.log(modalType)
 
   const handleResetPasswordModal = (clickedUser) => {
     showPasswordModal ? setTargetUser(null) : setTargetUser(clickedUser);
@@ -54,12 +59,13 @@ const UserManagement = () => {
   };
 
   const submitEditUser = async (data) => {
+    console.log(data)
     try {
       await api.updateUser(data);
       await fetchAllUsersData();
       setTargetUser(null);
       setShowModal(false)
-      setToastMsg(`Account ${data.username} updated successfully`);
+      setToastMsg(`Account "${data.username}" updated successfully`);
     } catch (error) {
       setToastMsg(error.response.data.message);
     }
@@ -72,7 +78,7 @@ const UserManagement = () => {
       await api.createUser(data);
       await fetchAllUsersData();
       setTargetUser(null);
-      setToastMsg(`Account ${data.username} created successfully`);
+      setToastMsg(`Account "${data.username}" created successfully`);
     } catch (error) {
       setToastMsg(error.response.data.message);
     }
@@ -109,43 +115,26 @@ const UserManagement = () => {
           handleResetPasswordModal={handleResetPasswordModal}
         />
 
-        <Modal show={showModal} onHide={handleShowModal}>
-          <Modal.Header closeButton>
-            <Modal.Title>
-              {modalType === "new" ? "New" : "Edit"} User
-            </Modal.Title>
-          </Modal.Header>
+        <AppModal showModal={showModal} handleShowModal={handleShowModal} modalType={modalType} title={modalType==='edit' ? "Edit User" : "New User"}>
           <EditUserForm
             user={targetUser}
             allGroupsData={allGroupsData}
-            modalType={modalType}
             submitEditUser={submitEditUser}
             submitNewUser={submitNewUser}
+            modalType={modalType}
           />
-        </Modal>
+        </AppModal>
 
-        <Modal show={showPasswordModal} onHide={handleResetPasswordModal}>
-          <Modal.Header closeButton>
-            <Modal.Title>Reset Password</Modal.Title>
-          </Modal.Header>
+        <AppModal showModal={showPasswordModal} handleShowModal={handleResetPasswordModal} title="Reset Password" >
           <PasswordResetForm
             user={targetUser}
             submitResetPassword={submitResetPassword}
-            error={toastMsg}
-          />
-        </Modal>
+          />    
+        </AppModal>
       </Container>
-
-      <ToastContainer position="top-end" className="p-3">
-        <Toast
-          onClose={() => setShowToast(false)}
-          show={showToast}
-          delay={3500}
-          autohide
-        >
-          <Toast.Body>{toastMsg}</Toast.Body>
-        </Toast>
-      </ToastContainer>
+      
+      <AppToast showToast={showToast} setShowToast={setShowToast} toastMsg={toastMsg}/>
+     
     </>
   );
 };

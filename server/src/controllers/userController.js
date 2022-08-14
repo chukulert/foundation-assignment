@@ -8,11 +8,11 @@ const findUser = async (username) => {
   return results[0][0];
 };
 
-const findUserGroups = async (userid) => {
-  const query = `SELECT t1.*, t2.name FROM assignment.user_groups t1 INNER JOIN assignment.groups t2 ON t1.group_id = t2.id`;
-  const results = await db.promise().query(query, [userid]);
-  return results[0];
-};
+// const findUserGroups = async (userid) => {
+//   const query = `SELECT t1.*, t2.name FROM assignment.user_groups t1 INNER JOIN assignment.groups t2 ON t1.group_id = t2.id`;
+//   const results = await db.promise().query(query, [userid]);
+//   return results[0];
+// };
 
 /** Minimum 8 characters and maximum 10 characters
  Comprise of alphabets , numbers, and special characters */
@@ -175,6 +175,7 @@ exports.updateUser = async (req, res) => {
         }
       */
     const groupsQueries = compareGroups(userGroups, groups); 
+    console.log(groupsQueries)
 
     const addGroups = groupsQueries.add.map(async (grp) => {
       const query = `INSERT INTO assignment.user_groups (user_id, group_id) VALUES (?, ?)`;

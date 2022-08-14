@@ -8,11 +8,17 @@ const GroupManagement = () => {
   const [allGroupsData, setAllGroupsData] = useState([]);
 
   useEffect(() => {
+    const controller = new AbortController()
+
     const fetchAllGroupsData = async () => {
       const { data } = await api.getAllGroups();
       setAllGroupsData(data);
     };
     fetchAllGroupsData();
+    
+    return() => {
+      controller.abort()
+    }
   }, []);
 
   const groupsList = allGroupsData.map((group) => (

@@ -10,14 +10,15 @@ const EditPersonalForm = (props) => {
   const [password, setPassword] = useState("");
   const [email, setEmail] = useState(user.email);
 
-    useEffect(() => {
-        setEmail(user.email)
-    }, [user])
+  useEffect(() => {
+    setEmail(user.email);
+  }, [user]);
+
   const handleFormSubmit = (e) => {
     e.preventDefault();
     modalType === "password"
-      ? updatePersonalDetails({password})
-      : updatePersonalDetails({email});
+      ? updatePersonalDetails({ password })
+      : updatePersonalDetails({ email });
   };
 
   return (
@@ -50,7 +51,7 @@ const EditPersonalForm = (props) => {
               type="email"
               placeholder="Enter new email address"
               onChange={(e) => setEmail(e.target.value)}
-            value={email}
+              value={email}
             />
           </FloatingLabel>
         </Form.Group>

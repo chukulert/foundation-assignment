@@ -2,6 +2,7 @@ import axios from 'axios'
 import decode from 'jwt-decode'
 
 const URL = axios.create({ baseURL: process.env.REACT_APP_SERVER_URL })
+const controller = new AbortController();
 
 URL.interceptors.request.use((req) => {
     const userData = localStorage.getItem('userData')
@@ -32,9 +33,9 @@ export const getMe = () => URL.get(`/users/me`)
 export const updateMe = (userData) => URL.patch(`/users/me`, userData)
 
 //admin user management
-export const getAllUsers = () => URL.get(`/users/all`)
+export const getAllUsers = () => URL.get(`/users/all`, {signal: controller.signal})
 export const createUser = (userData) => URL.post(`/users/createUser`, userData)
 export const updateUser = (userData) => URL.patch(`/users/updateUser`, userData)
 export const updatePassword = (userData) => URL.patch(`/users/updatePassword`, userData)
-export const getAllGroups = () => URL.get(`/users/allgroups`) 
+export const getAllGroups = () => URL.get(`/users/allgroups`,  {signal: controller.signal}) 
 

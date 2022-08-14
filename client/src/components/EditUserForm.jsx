@@ -43,7 +43,17 @@ const EditUserForm = (props) => {
       });
       setOptionsArray(formattedGroupsArray);
     }
+    return () => {
+      emptyFormFields()
+    }
   }, [user, allGroupsData]);
+
+  const emptyFormFields = () => {
+    setUsername("");
+    setPassword("");
+    setEmail("");
+    setSelectedArray([]);
+  }
 
   const handleFormSubmit = (e) => {
     e.preventDefault();
@@ -63,10 +73,7 @@ const EditUserForm = (props) => {
     }
     if (modalType === "new") {
       submitNewUser(data);
-      setUsername("");
-      setPassword("");
-      setEmail("");
-      setSelectedArray([]);
+      emptyFormFields()
     }
   };
 
@@ -151,6 +158,7 @@ const EditUserForm = (props) => {
         </FloatingLabel>
       </Form.Group>
 
+      <Form.Label>Group</Form.Label>
       <Select
         options={optionsArray}
         closeMenuOnSelect={false}

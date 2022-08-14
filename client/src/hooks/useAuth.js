@@ -20,7 +20,6 @@ const useAuth = () => {
 
   }, []);
 
-
   return [user, setUser];
 };
 
