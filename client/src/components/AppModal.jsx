@@ -1,10 +1,12 @@
+import { useContext } from "react";
 import Modal from "react-bootstrap/Modal";
+import { ModalContext } from "../context/ModalContext";
 
 const AppModal = (props) => {
-  const { children, showModal, handleShowModal, title } = props;
+  const { children, handleShowModal, showModal, title } = props;
 
   return (
-    <Modal show={showModal} onHide={handleShowModal}>
+    <Modal show={showModal} onHide={handleShowModal} >
       <Modal.Header closeButton>
         <Modal.Title>{title}</Modal.Title>
       </Modal.Header>

@@ -7,12 +7,10 @@ import { useEffect } from "react";
 import Select from "react-select";
 
 const EditUserForm = (props) => {
-  const { user, allGroupsData, modalType, submitEditUser, submitNewUser } =
-    props;
+  const { user, allGroupsData, modalType, submitEditUser, submitNewUser } = props;
   const [selectedArray, setSelectedArray] = useState([]);
   const [optionsArray, setOptionsArray] = useState([]);
   const [userStatus, setUserStatus] = useState("");
-  const [userRole, setUserRole] = useState("");
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [email, setEmail] = useState("");
@@ -20,7 +18,6 @@ const EditUserForm = (props) => {
   useEffect(() => {
     if (user) {
       setSelectedArray([]);
-      setUserRole(user.role);
       setUserStatus(user.isActive);
       setEmail(user.email);
       setUsername(user.username);
@@ -63,7 +60,6 @@ const EditUserForm = (props) => {
       password,
       email,
       isActive: userStatus,
-      role: userRole,
       groups: selectedArray.map((group) => group.value),
       userGroups: user?.groupIDs
     };
@@ -125,19 +121,6 @@ const EditUserForm = (props) => {
             value={email || ""}
             onChange={(e) => setEmail(e.target.value)}
           />
-        </FloatingLabel>
-      </Form.Group>
-
-      <Form.Group className="mb-3" controlId="formRole">
-        <FloatingLabel controlId="formRole" label="Role" className="text-muted">
-          <Form.Select
-            aria-label="Role"
-            value={userRole || "user"}
-            onChange={(e) => setUserRole(e.target.value)}
-          >
-            <option value="admin">Admin</option>
-            <option value="user">User</option>
-          </Form.Select>
         </FloatingLabel>
       </Form.Group>
 

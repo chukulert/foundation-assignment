@@ -20,9 +20,9 @@ exports.getAllPlans = async (req, res) => {
 };
 
 exports.createPlan = async (req, res) => {
-  const { mvp_name, startDate, endDate, appId } = req.body;
+  const { plan_mvp_name, plan_startDate, plan_endDate, plan_app_acronym, plan_color, plan_description } = req.body;
 
-  if (startDate > endDate) {
+  if (plan_startDate > plan_endDate) {
     return res
       .status(400)
       .json({ message: "Starting Date cannot be later than End Date" });
@@ -30,7 +30,7 @@ exports.createPlan = async (req, res) => {
 
   try {
     /** check for existing application */
-    const existingPlan = await findPlan(mvp_name);
+    const existingPlan = await findPlan(plan_mvp_name);
     const allowedUser = await checkGroupName(req.user.id, "manager");
 
     if (!allowedUser) {
@@ -42,10 +42,10 @@ exports.createPlan = async (req, res) => {
     } else {
       /** If application acronym is acceptable */
       const query =
-        "INSERT INTO assignment.plans (plan_mvp_name, plan_startDate, plan_endDate, plan_app_acronym) VALUES (?, ?, ?, ?); ";
+        "INSERT INTO assignment.plans (plan_mvp_name, plan_startDate, plan_endDate, plan_app_acronym, plan_color, plan_description) VALUES (?, ?, ?, ?, ?, ?); ";
       await db
         .promise()
-        .query(query, [mvp_name, startDate, endDate, appId]);
+        .query(query, [plan_mvp_name, plan_startDate, plan_endDate, plan_app_acronym, plan_color, plan_description]);
 
       return res
         .status(200)

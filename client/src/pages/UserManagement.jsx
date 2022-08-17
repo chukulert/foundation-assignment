@@ -6,7 +6,8 @@ import Button from "react-bootstrap/Button";
 import Container from "react-bootstrap/Container";
 import PasswordResetForm from "../components/PasswordResetForm";
 import AppModal from "../components/AppModal";
-import AppToast from "../components/Toast";
+import { useContext } from "react";
+import { ToastContext } from "../context/ToastContext";
 
 const UserManagement = () => {
   const [allUserData, setAllUserData] = useState([]);
@@ -16,8 +17,8 @@ const UserManagement = () => {
   const [showModal, setShowModal] = useState(false);
   const [modalType, setModalType] = useState("");
   const [showPasswordModal, setShowPasswordModal] = useState(false);
-  const [toastMsg, setToastMsg] = useState(null);
-  const [showToast, setShowToast] = useState(false);
+
+  const { setToastMsg, setShowToast } = useContext(ToastContext);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -27,14 +28,15 @@ const UserManagement = () => {
     fetchData();
 
     return () => {
-      controller.abort()
-    }
+      controller.abort();
+    };
   }, []);
 
   const fetchAllUsersData = async () => {
     const { data } = await api.getAllUsers();
     setAllUserData(data);
   };
+  
   const fetchAllGroupsData = async () => {
     const { data } = await api.getAllGroups();
     setAllGroupsData(data);
@@ -45,7 +47,6 @@ const UserManagement = () => {
     showModal ? setShowModal(false) : setShowModal(true);
     setModalType(modalType);
   };
-  console.log(modalType)
 
   const handleResetPasswordModal = (clickedUser) => {
     showPasswordModal ? setTargetUser(null) : setTargetUser(clickedUser);
@@ -59,12 +60,12 @@ const UserManagement = () => {
   };
 
   const submitEditUser = async (data) => {
-    console.log(data)
+    console.log(data);
     try {
       await api.updateUser(data);
       await fetchAllUsersData();
       setTargetUser(null);
-      setShowModal(false)
+      setShowModal(false);
       setToastMsg(`Account "${data.username}" updated successfully`);
     } catch (error) {
       setToastMsg(error.response.data.message);
@@ -73,7 +74,7 @@ const UserManagement = () => {
   };
 
   const submitNewUser = async (data) => {
-    console.log(data)
+    console.log(data);
     try {
       await api.createUser(data);
       await fetchAllUsersData();
@@ -115,7 +116,12 @@ const UserManagement = () => {
           handleResetPasswordModal={handleResetPasswordModal}
         />
 
-        <AppModal showModal={showModal} handleShowModal={handleShowModal} modalType={modalType} title={modalType==='edit' ? "Edit User" : "New User"}>
+        <AppModal
+          showModal={showModal}
+          handleShowModal={handleShowModal}
+          modalType={modalType}
+          title={modalType === "edit" ? "Edit User" : "New User"}
+        >
           <EditUserForm
             user={targetUser}
             allGroupsData={allGroupsData}
@@ -125,16 +131,17 @@ const UserManagement = () => {
           />
         </AppModal>
 
-        <AppModal showModal={showPasswordModal} handleShowModal={handleResetPasswordModal} title="Reset Password" >
+        <AppModal
+          showModal={showPasswordModal}
+          handleShowModal={handleResetPasswordModal}
+          title="Reset Password"
+        >
           <PasswordResetForm
             user={targetUser}
             submitResetPassword={submitResetPassword}
-          />    
+          />
         </AppModal>
       </Container>
-      
-      <AppToast showToast={showToast} setShowToast={setShowToast} toastMsg={toastMsg}/>
-     
     </>
   );
 };

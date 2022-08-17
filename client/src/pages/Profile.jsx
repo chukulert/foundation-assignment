@@ -6,14 +6,14 @@ import EditPersonalForm from "../components/EditPersonalForm";
 import * as api from "../api/index";
 import Button from "react-bootstrap/Button";
 import AppModal from "../components/AppModal";
-import AppToast from "../components/Toast";
+import { ToastContext } from "../context/ToastContext";
 
 const Profile = () => {
   const { user, setUser } = useContext(AuthContext);
   const [showModal, setShowModal] = useState(false);
   const [modalType, setModalType] = useState("");
-  const [toastMsg, setToastMsg] = useState(null);
-  const [showToast, setShowToast] = useState(false);
+
+  const { setToastMsg, setShowToast } = useContext(ToastContext);
 
   const handleShowModal = (modalType) => {
     modalType ? setModalType(modalType) : setModalType(null);
@@ -23,7 +23,7 @@ const Profile = () => {
   const updatePersonalDetails = async (data) => {
     try {
       await api.updateMe(data);
-      const updatedUser = await api.getMe()
+      const updatedUser = await api.getMe();
       setUser({
         token: user.token,
         ...updatedUser.data,
@@ -47,7 +47,6 @@ const Profile = () => {
                 <tr>
                   <th>Username</th>
                   <th>Email</th>
-                  <th>Role</th>
                   <th>Edit</th>
                 </tr>
               </thead>
@@ -55,7 +54,6 @@ const Profile = () => {
                 <tr>
                   <td>{user.username}</td>
                   <td>{user.email}</td>
-                  <td>{user.role}</td>
                   <td>
                     <Button
                       onClick={() => handleShowModal("email")}
@@ -80,7 +78,7 @@ const Profile = () => {
       <AppModal
         showModal={showModal}
         handleShowModal={handleShowModal}
-        title={modalType === 'email' ? "Change Email" : "Change Password"}
+        title={modalType === "email" ? "Change Email" : "Change Password"}
       >
         <EditPersonalForm
           user={user}
@@ -88,12 +86,6 @@ const Profile = () => {
           updatePersonalDetails={updatePersonalDetails}
         />
       </AppModal>
-
-      <AppToast
-        showToast={showToast}
-        setShowToast={setShowToast}
-        toastMsg={toastMsg}
-      />
     </>
   );
 };

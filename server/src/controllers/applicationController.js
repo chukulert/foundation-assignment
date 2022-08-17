@@ -11,8 +11,8 @@ exports.findApplication = findApplication;
 
 exports.getAllApplications = async (req, res, next) => {
   try {
-    const query = `SELECT * FROM assignment.applications WHERE app_creator = ?`;
-    const queryApplications = await db.promise().query(query, [req.user.id]);
+    const query = `SELECT * FROM assignment.applications`;
+    const queryApplications = await db.promise().query(query);
     const results = queryApplications[0];
     return res.status(200).json(results);
   } catch (error) {
@@ -22,18 +22,18 @@ exports.getAllApplications = async (req, res, next) => {
 
 exports.createApplication = async (req, res, next) => {
   const {
-    appAcronym,
-    description,
-    startDate,
-    endDate,
-    permit_create,
-    permit_toDoList,
-    permit_doing,
-    permit_done,
-    permit_close,
+    app_acronym,
+    app_description,
+    app_startDate,
+    app_endDate,
+    app_permit_create,
+    app_permit_toDoList,
+    app_permit_doing,
+    app_permit_done,
+    app_permit_close,
   } = req.body;
 
-  if (startDate > endDate) {
+  if (app_startDate > app_endDate) {
     return res
       .status(400)
       .json({ message: "Starting Date cannot be later than End Date" });
@@ -41,7 +41,7 @@ exports.createApplication = async (req, res, next) => {
 
   try {
     /** check for existing application */
-    const existingApplication = await findApplication(appAcronym);
+    const existingApplication = await findApplication(app_acronym);
     const leadUser = await checkGroupName(req.user.id, "lead");
     if (!leadUser) {
       return res.status(401).json({
@@ -52,20 +52,19 @@ exports.createApplication = async (req, res, next) => {
     } else {
       /** If application acronym is acceptable */
       const query =
-        "INSERT INTO assignment.applications (app_acronym, app_description, app_startDate, app_endDate, app_permit_create, app_permit_toDoList, app_permit_doing, app_permit_done, app_permit_close, app_creator) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?); ";
+        "INSERT INTO assignment.applications (app_acronym, app_description, app_startDate, app_endDate, app_permit_create, app_permit_toDoList, app_permit_doing, app_permit_done, app_permit_close) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?); ";
       await db
         .promise()
         .query(query, [
-          appAcronym,
-          description,
-          startDate,
-          endDate,
-          permit_create,
-          permit_toDoList,
-          permit_doing,
-          permit_done,
-          permit_close,
-          req.user.id,
+          app_acronym,
+          app_description,
+          app_startDate,
+          app_endDate,
+          app_permit_create,
+          app_permit_toDoList,
+          app_permit_doing,
+          app_permit_done,
+          app_permit_close,
         ]);
 
       return res

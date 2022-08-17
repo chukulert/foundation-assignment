@@ -25,6 +25,7 @@ const Login = () => {
         navigate(state?.path || "/");
     
     } catch (error) {
+      console.log(error)
       setError(error.response.data.message);
     }
   };

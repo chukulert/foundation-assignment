@@ -7,9 +7,9 @@ import Home from "../pages/Home";
 import Profile from "../pages/Profile";
 import { Navigate } from "react-router-dom";
 import GroupManagement from "../pages/GroupManagement";
+import ApplicationProvider from "../context/ApplicationContext";
 
 const AppRoutes = () => {
-
   return (
     <>
       <Routes>
@@ -17,11 +17,13 @@ const AppRoutes = () => {
           path="/"
           element={
             <Protected>
-              <Home />
+            
+                <Home />
+             
             </Protected>
           }
         />
-              <Route
+        <Route
           path="/profile"
           element={
             <Protected>

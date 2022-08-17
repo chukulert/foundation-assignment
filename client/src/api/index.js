@@ -32,10 +32,22 @@ export const logout = () => URL.post(`/users/logout`)
 export const getMe = () => URL.get(`/users/me`)
 export const updateMe = (userData) => URL.patch(`/users/me`, userData)
 
+export const getAllGroups = () => URL.get(`/users/allgroups`,  {signal: controller.signal}) 
+
 //admin user management
 export const getAllUsers = () => URL.get(`/users/all`, {signal: controller.signal})
 export const createUser = (userData) => URL.post(`/users/createUser`, userData)
 export const updateUser = (userData) => URL.patch(`/users/updateUser`, userData)
 export const updatePassword = (userData) => URL.patch(`/users/updatePassword`, userData)
-export const getAllGroups = () => URL.get(`/users/allgroups`,  {signal: controller.signal}) 
+export const createGroup = (groupData) => URL.post(`/users/allgroups`, groupData) 
 
+//task management
+export const getAllApplications = () => URL.get(`/tasks/applications`, {signal: controller.signal})
+export const createApplication = (applicationData) => URL.post(`/tasks/applications`, applicationData)
+
+export const getAllPlans = (appId) => URL.get(`/tasks/${appId}/plans`, {signal: controller.signal})
+export const createPlan = (appId, planData) => URL.post(`/tasks/${appId}/plans`, planData)
+
+export const getAllTasks = (appId) => URL.get(`/tasks/${appId}`, {signal: controller.signal})
+export const createTask = (appId, taskData) => URL.post(`/tasks/${appId}`, taskData)
+export const updateTaskState = (appId, taskId, stateData) => URL.patch(`/tasks/${appId}/${taskId}`, stateData)

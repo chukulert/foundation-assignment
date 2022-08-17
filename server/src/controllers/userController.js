@@ -8,11 +8,7 @@ const findUser = async (username) => {
   return results[0][0];
 };
 
-// const findUserGroups = async (userid) => {
-//   const query = `SELECT t1.*, t2.name FROM assignment.user_groups t1 INNER JOIN assignment.groups t2 ON t1.group_id = t2.id`;
-//   const results = await db.promise().query(query, [userid]);
-//   return results[0];
-// };
+
 
 /** Minimum 8 characters and maximum 10 characters
  Comprise of alphabets , numbers, and special characters */
@@ -27,7 +23,7 @@ const validPassword = (password) => {
 
 exports.getAllUsers = async (req, res) => {
   try {
-    const query1 = `SELECT id, username, email, role, isActive FROM users`;
+    const query1 = `SELECT id, username, email, isActive FROM users`;
     const query2 = `SELECT t1.*, t2.name FROM assignment.user_groups t1 INNER JOIN assignment.groups t2 ON t1.group_id = t2.id`;
     const queryUsers = db.promise().query(query1);
     const queryGroups = db.promise().query(query2);
@@ -61,7 +57,7 @@ exports.getUserById = async (req, res) => {
 };
 
 exports.createUser = async (req, res) => {
-  const { username, password, email, groups, role } = req.body;
+  const { username, password, email, groups } = req.body;
 
   if (!username || !password) {
     return res
@@ -85,10 +81,10 @@ exports.createUser = async (req, res) => {
       /** If user does not exists */
       const hashedPassword = await argon2.hash(password);
       const query =
-        "INSERT INTO users (username, email, password, role) VALUES (?, ?, ?, ?); SELECT LAST_INSERT_ID()"; //create new user and retrieve id
+        "INSERT INTO users (username, email, password) VALUES (?, ?, ?); SELECT LAST_INSERT_ID()"; //create new user and retrieve id
       const results = await db
         .promise()
-        .query(query, [username, email, hashedPassword, role ? role : "user"]);
+        .query(query, [username, email, hashedPassword]);
 
       const id = results[0][1][0]["LAST_INSERT_ID()"];
       if (groups) {
@@ -158,15 +154,14 @@ exports.updateUser = async (req, res) => {
   const username = req.body.username;
   const isActive = req.body.isActive;
   const email = req.body.email;
-  const role = req.body.role;
   const groups = req.body.groups || []; //[groupId, groupId, groupId]
   const userGroups = req.body.userGroups || [];
 
   try {
-    const query = `UPDATE users SET isActive = ?, email = ?, role = ? WHERE username = ?`;
+    const query = `UPDATE users SET isActive = ?, email = ? WHERE username = ?`;
     const updateUserDetails = db
       .promise()
-      .query(query, [isActive, email, role, username]);
+      .query(query, [isActive, email, username]);
 
       /**returns a hashmap 
         {
@@ -175,7 +170,6 @@ exports.updateUser = async (req, res) => {
         }
       */
     const groupsQueries = compareGroups(userGroups, groups); 
-    console.log(groupsQueries)
 
     const addGroups = groupsQueries.add.map(async (grp) => {
       const query = `INSERT INTO assignment.user_groups (user_id, group_id) VALUES (?, ?)`;

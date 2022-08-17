@@ -26,9 +26,14 @@ const Protected = ({ admin, children }) => {
     return <Navigate to="/login" state={{ path: location.pathname }} />;
   }
   if (admin) {
-    if (user?.role !== "admin") {
-      return <Navigate to="/" replace state={{ path: location.pathname }} />;
-    }
+    let admin = false;
+
+    user?.groups.forEach(group => {
+      if(group.name === 'admin') {
+        admin = true;
+      }
+    })
+    if(!admin) return <Navigate to="/" replace state={{ path: location.pathname }} />;
   }
   return children;
 };

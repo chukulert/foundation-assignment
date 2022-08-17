@@ -23,7 +23,7 @@ exports.getAllTasks = async (req, res) => {
 
 exports.createTask = async (req, res, next) => {
   const appAcronym = req.params.appId;
-  const { name, description, plan, state } = req.body;
+  const { task_name, task_description, task_plan, task_state } = req.body;
 
   try {
     /** check for existing application */
@@ -33,6 +33,7 @@ exports.createTask = async (req, res, next) => {
       req.user.id,
       application.app_permit_create
     );
+
     if (!permittedUser) {
       return res.status(401).json({
         message: "You are not permitted to create a task.",
@@ -40,7 +41,16 @@ exports.createTask = async (req, res, next) => {
     }
     /** If permitted */
     const taskId = `${application.app_acronym}_${+application.app_Rnumber + 1}`;
+
     const date = createDateTime();
+
+    const taskNote = JSON.stringify([
+      {
+        userId: req.user.id,
+        task_state,
+        Timestamp: date,
+      },
+    ]);
 
     const query =
       "INSERT INTO assignment.tasks (task_id, task_name, task_description, task_plan, task_app_acronym, task_state, task_creator, task_owner, task_createDate, task_notes) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?); ";
@@ -48,15 +58,15 @@ exports.createTask = async (req, res, next) => {
       .promise()
       .query(query, [
         taskId,
-        name,
-        description,
-        plan,
+        task_name,
+        task_description,
+        task_plan,
         appAcronym,
-        state,
+        task_state,
         req.user.id,
         req.user.id,
         date,
-        "[]",
+        taskNote,
       ]);
 
     const query2 =
@@ -75,19 +85,14 @@ exports.createTask = async (req, res, next) => {
 const permittedUser = async (state, currentState, application, userId) => {
   if (state === "toDoList" && currentState === "open") {
     return await checkGroupId(userId, application.app_permit_toDoList);
-
   } else if (state === "doing" && currentState === "toDoList") {
     return await checkGroupId(userId, application.app_permit_doing);
-
   } else if (state === "toDoList" && currentState === "doing") {
     return await checkGroupId(userId, application.app_permit_doing);
-
   } else if (state === "done" && currentState === "doing") {
     return await checkGroupId(userId, application.app_permit_done);
-
   } else if (state === "close" && currentState === "done") {
     return await checkGroupId(userId, application.app_permit_close);
-
   } else if (state === "doing" && currentState === "done") {
     return await checkGroupId(userId, application.app_permit_close);
   }
@@ -106,7 +111,7 @@ const addTaskNotes = (userId, task, state) => {
   return JSON.stringify([...taskNotes, newTaskNote]);
 };
 
-exports.updateTaskState = async (req, res, next) => {
+exports.updateTaskState = async (req, res) => {
   const { appId, taskId } = req.params;
 
   const state = req.body.state;
@@ -122,7 +127,14 @@ exports.updateTaskState = async (req, res, next) => {
         .json({ message: "There is no task available in this application." });
     }
 
-    if (await permittedUser(state, currentState, application, req.user.id)) {
+    const permitted = await permittedUser(
+      state,
+      currentState,
+      application,
+      req.user.id
+    );
+
+    if (permitted) {
       const taskNotes = addTaskNotes(req.user.id, task, state);
 
       const query =

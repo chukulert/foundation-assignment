@@ -1,5 +1,5 @@
-import { useEffect } from "react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { capitalizeFirstLetter } from "../../utils/helpers";
 import Button from "react-bootstrap/esm/Button";
 
 const UserTableItem = (props) => {
@@ -9,12 +9,16 @@ const UserTableItem = (props) => {
   useEffect(() => {
     if (user.groups) {
       let userGroupString = "";
-      userGroupString = user.groups.forEach((group) => {
-        userGroupString += ` ${group.name} `;
+      userGroupString = user.groups.forEach((group, index) => {
+        if (index !== user.groups.length - 1) {
+          userGroupString += ` ${capitalizeFirstLetter(group.name)} | `;
+        } else {
+          userGroupString += ` ${capitalizeFirstLetter(group.name)} `;
+        }
         setUserGroups(userGroupString);
       });
     } else {
-        setUserGroups('')
+      setUserGroups("");
     }
   }, [user]);
 
@@ -31,7 +35,6 @@ const UserTableItem = (props) => {
       <td>{user.id}</td>
       <td>{user.username}</td>
       <td>{user.email}</td>
-      <td>{user.role}</td>
       <td>{userGroups}</td>
       <td className={user.isActive === "1" ? "text-success" : "text-danger"}>
         {user.isActive === "1" ? "Enabled" : "Disabled"}

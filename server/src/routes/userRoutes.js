@@ -18,10 +18,12 @@ router
   .get(userController.getMe)
   .patch(userController.updateMe);
 
+  router.route("/allgroups") 
+  .get(groupController.getAllGroups)
+  .post(authController.restrictedRoute('admin'), groupController.createGroup) //route protected
+
 /** Routes after this are protected by admin */
 router.use(authController.restrictedRoute('admin'));
-
-router.get("/allgroups", groupController.getAllGroups)
 
 router.get("/all", userController.getAllUsers);
 router.route("/createUser").post(userController.createUser);

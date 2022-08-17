@@ -1,6 +1,7 @@
 const argon2 = require("argon2");
 const jwt = require("jsonwebtoken");
 const db = require("../config/database");
+const { mergeResults } = require("../utils/helpers");
 
 const SECRET_KEY = process.env.JWT_SECRET || "";
 
@@ -27,14 +28,22 @@ const createSendToken = (user, statusCode, req, res) => {
 
   res.status(statusCode).json({
     status: "success",
-    user: {...user, token}
+    user: { ...user, token },
   });
+};
+
+const findUserGroups = async (userid) => {
+  const query = `SELECT t1.*, t2.name FROM assignment.user_groups t1 INNER JOIN assignment.groups t2 ON t1.group_id = t2.id`;
+  const results = await db.promise().query(query, [userid]);
+  return results[0];
 };
 
 const findUser = async (username) => {
   const query = `SELECT * FROM users WHERE username = ?`;
   const results = await db.promise().query(query, [username]);
-  return results[0][0];
+  const userGroups = await findUserGroups(results[0][0].id);
+  const data = mergeResults([results[0][0]], userGroups);
+  return data[0];
 };
 
 exports.signup = async (req, res, next) => {
@@ -71,16 +80,18 @@ exports.signup = async (req, res, next) => {
 };
 
 exports.login = async (req, res) => {
-
   const username = req.body.username;
   const password = req.body.password;
   if (!username || !password)
-    return res.status(401).json({ message: "Please enter a valid username and password" });
+    return res
+      .status(401)
+      .json({ message: "Please enter a valid username and password" });
 
   try {
     const user = await findUser(username);
 
-    if(!user) return res.status(401).json({ message: "Invalid username or password." });
+    if (!user)
+      return res.status(401).json({ message: "Invalid username or password." });
     if (await argon2.verify(user.password, password)) {
       createSendToken(user, 200, req, res);
     } else {
@@ -132,15 +143,20 @@ exports.protectedRoute = async (req, res, next) => {
   next();
 };
 
-exports.restrictedRoute = (roles) => {
+exports.restrictedRoute = (role) => {
   return (req, res, next) => {
     // roles ['admin' || 'user']
-    if (!roles.includes(req.user.role)) {
-      return res.status(403).json({
-        message: "You do not have permission to perform this action.",
-      });
-    }
-    next();
+    let permitted = false;
+
+    req.user.groups.forEach((group) => {
+      if (group.name === role) {
+        permitted = true;
+      }
+    });
+
+    if (permitted) return next();
+    return res.status(403).json({
+      message: "You do not have permission to perform this action.",
+    });
   };
 };
-
