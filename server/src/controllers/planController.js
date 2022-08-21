@@ -8,6 +8,17 @@ const findPlan = async (planId) => {
 };
 
 exports.getAllPlans = async (req, res) => {
+  try {
+    const query = `SELECT * FROM assignment.plans`;
+    const queryPlans = await db.promise().query(query);
+    const results = queryPlans[0];
+    return res.status(200).json(results);
+  } catch (error) {
+    return res.status(400).json({ message: error.message });
+  }
+}
+
+exports.getApplicationPlans = async (req, res) => {
     const app_acronym = req.params.appId
   try {
     const query = `SELECT * FROM assignment.plans WHERE plan_app_acronym = ?`;

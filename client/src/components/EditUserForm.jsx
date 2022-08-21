@@ -63,7 +63,7 @@ const EditUserForm = (props) => {
       groups: selectedArray.map((group) => group.value),
       userGroups: user?.groupIDs
     };
-    console.log(data);
+
     if (modalType === "edit") {
       submitEditUser(data);
     }

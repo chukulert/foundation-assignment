@@ -16,17 +16,27 @@ const ApplicationContainer = (props) => {
         value: selectedApplication.app_acronym,
         label: selectedApplication.app_acronym,
       });
+    } else {
+      setApplicationValue({
+        value: null,
+        label: "All",
+      });
     }
   }, [selectedApplication]);
 
-  const options = applications?.map((app) => {
-    return {
-      value: app.app_acronym,
-      label: app.app_acronym,
-    };
-  });
+  const selectApplicationOptions = [
+    { value: null, label: "All" },
+    ...applications?.map((app) => {
+      return {
+        value: app.app_acronym,
+        label: app.app_acronym,
+      };
+    }),
+  ];
 
   const setApplication = ({ value }) => {
+    if (!value) return setSelectedApplication(null);
+
     const application = applications.find((ele) => {
       return ele.app_acronym === value;
     });
@@ -35,12 +45,11 @@ const ApplicationContainer = (props) => {
 
   return (
     <div className="my-3">
-     <Form.Label htmlFor="description">Select Application</Form.Label>
+      <Form.Label htmlFor="description">Select Application</Form.Label>
       <Select
-        options={options}
+        options={selectApplicationOptions}
         value={applicationValue}
         onChange={(value) => setApplication(value)}
-    
       />
     </div>
   );

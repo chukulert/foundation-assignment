@@ -3,9 +3,12 @@ import Row from "react-bootstrap/Row";
 import TaskItem from "./TaskItem";
 import Button from "react-bootstrap/Button";
 import { useState, useEffect } from "react";
+import { useContext } from "react";
+import { ApplicationContext } from "../../context/ApplicationContext";
 
 const TaskContainer = (props) => {
-  const { tasks, handleShowModal, updateTaskState } = props;
+  const { handleShowModal, updateTaskState, tasks } = props;
+  const { selectedApplication } = useContext(ApplicationContext);
   const [openTasks, setOpenTasks] = useState([]);
   const [toDoTasks, setToDoTasks] = useState([]);
   const [progressTasks, setProgressTasks] = useState([]);
@@ -38,7 +41,7 @@ const TaskContainer = (props) => {
     setDoneTasks(doneArr);
     setCompletedTasks(completedArr);
     return () => {};
-  }, [tasks]);
+  }, [selectedApplication, tasks]);
 
   const openTasksList = openTasks.map((task) => (
     <TaskItem
@@ -88,23 +91,23 @@ const TaskContainer = (props) => {
   return (
     <Row xs={5} md={5} lg={5}>
       <Col>
-        <h3>Open</h3>
+        <h5>Open</h5>
         {openTasksList}
       </Col>
       <Col>
-        <h3>To-Dos</h3>
+        <h5>To-Dos</h5>
         {toDoTasksList}
       </Col>
       <Col>
-        <h3>Doing</h3>
+        <h5>Doing</h5>
         {inProgressTasksList}
       </Col>
       <Col>
-        <h3>Done</h3>
+        <h5>Done</h5>
         {doneTasksList}
       </Col>
       <Col>
-        <h3>Completed</h3>
+        <h5>Completed</h5>
         {completedTasksList}
       </Col>
     </Row>

@@ -1,53 +1,110 @@
 import Button from "react-bootstrap/Button";
 import Form from "react-bootstrap/Form";
 import FloatingLabel from "react-bootstrap/FloatingLabel";
-import { useState } from "react";
+import { useState, useContext } from "react";
 import { capitalizeFirstLetter } from "../utils/helpers";
 import { useEffect } from "react";
+import { ApplicationContext } from "../context/ApplicationContext";
+import Select from "react-select";
+import { ToastContext } from "../context/ToastContext";
 
 const ApplicationForm = (props) => {
-  const { allGroupsData, modalType, submitNewApplication, plans } = props;
-  const [optionsArray, setOptionsArray] = useState([]);
+  const { allGroupsData, modalType, submitNewApplication } = props;
+  const { applications, selectedApplication, plans } =
+    useContext(ApplicationContext);
 
+  const {setToastMsg, setShowToast} = useContext(ToastContext)
+
+  const [optionsArray, setOptionsArray] = useState([]);
   const [acronym, setAcronym] = useState("");
+  const [rNumber, setRNumber] = useState(0);
   const [description, setDescription] = useState("");
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
-  const [permitCreate, setPermitCreate] = useState("");
-  const [permitToDo, setPermitToDo] = useState("");
-  const [permitDoing, setPermitDoing] = useState("");
-  const [permitDone, setPermitDone] = useState("");
-  const [permitClose, setPermitClose] = useState("");
+  const [permitCreate, setPermitCreate] = useState([]);
+  const [permitToDo, setPermitToDo] = useState([]);
+  const [permitDoing, setPermitDoing] = useState([]);
+  const [permitDone, setPermitDone] = useState([]);
+  const [permitClose, setPermitClose] = useState([]);
 
+  const [applicationValue, setApplicationValue] = useState("");
   const [color, setColor] = useState(null);
 
   const [plan, setPlan] = useState("");
-  const [state, setState] = useState("open");
 
   useEffect(() => {
+    /**Set options for group selection */
     if (modalType === "Application" && allGroupsData) {
-      const formattedGroupsArray = allGroupsData.map((group) => (
-        <option value={group.id} key={group.id}>
-          {capitalizeFirstLetter(group.name)}
-        </option>
-      ));
+      const formattedGroupsArray = allGroupsData.map((group) => {
+        return {
+          value: group.id,
+          label: capitalizeFirstLetter(group.name),
+        };
+      });
+
+      /**Set pre-defined selected options for each task permission */
       allGroupsData.forEach((group) => {
-        if (group.name === "manager") setPermitToDo(group.id);
+        if (group.name === "manager")
+          setPermitToDo([
+            {
+              value: group.id,
+              label: capitalizeFirstLetter(group.name),
+            },
+          ]);
         if (group.name === "lead") {
-          setPermitCreate(group.id);
-          setPermitClose(group.id);
+          setPermitCreate([{
+            value: group.id,
+            label: capitalizeFirstLetter(group.name),
+          }]);
+          setPermitClose([
+            {
+              value: group.id,
+              label: capitalizeFirstLetter(group.name),
+            },
+          ]);
         }
         if (group.name === "member") {
-          setPermitDoing(group.id);
-          setPermitDone(group.id);
+          setPermitDoing([
+            {
+              value: group.id,
+              label: capitalizeFirstLetter(group.name),
+            },
+          ]);
+          setPermitDone([
+            {
+              value: group.id,
+              label: capitalizeFirstLetter(group.name),
+            },
+          ]);
         }
       });
       setOptionsArray(formattedGroupsArray);
     }
 
+    if (modalType === "Plan" && applications) {
+      const formattedGroupsArray = applications.map((app) => (
+        <option value={app.app_acronym} key={app.app_acronym}>
+          {app.app_acronym}
+        </option>
+      ));
+      setOptionsArray(formattedGroupsArray);
+      if (selectedApplication){
+        setApplicationValue(selectedApplication.app_acronym)} else {
+          setApplicationValue(applications[0].app_acronym)
+        }
+    }
+
     if (modalType === "Task" && plans) {
-      const nullOption = <option key="empty" value={""}>No Plan Selected</option>;
-      const formattedGroupsArray = plans.map((plan) => (
+      const appPlans = plans.filter((plan) => {
+        return plan.plan_app_acronym === selectedApplication.app_acronym;
+      });
+
+      const nullOption = (
+        <option key="empty" value={""}>
+          No Plan Selected
+        </option>
+      );
+      const formattedGroupsArray = appPlans.map((plan) => (
         <option value={plan.plan_mvp_name} key={plan.plan_mvp_name}>
           {plan.plan_mvp_name}
         </option>
@@ -57,35 +114,39 @@ const ApplicationForm = (props) => {
     return () => {
       //   emptyFormFields()
     };
-  }, [allGroupsData, plans]);
-
-  //   const emptyFormFields = () => {
-  //     setUsername("");
-  //     setPassword("");
-  //     setEmail("");
-  //     setSelectedArray([]);
-  //   }
+  }, [allGroupsData, plans, applications]);
 
   const handleFormSubmit = (e) => {
     e.preventDefault();
     let data;
-    if (modalType === "Application")
+    
+
+    if (modalType === "Application") {
+      if(!permitClose.length || !permitCreate.length || !permitToDo.length || !permitDoing.length || !permitDone.length) {
+        setToastMsg("All fields for permission settings must be filled.")
+        setShowToast(true)
+        return;
+      }
+
       data = {
-        app_acronym: acronym,
+      app_acronym: acronym,
         app_description: description,
+        app_Rnumber: rNumber,
         app_startDate: startDate,
         app_endDate: endDate,
-        app_permit_create: permitCreate,
-        app_permit_toDoList: permitToDo,
-        app_permit_doing: permitDoing,
-        app_permit_done: permitDone,
-        app_permit_close: permitClose,
+        app_permit_create: permitCreate.map((group) => group.value),
+        app_permit_toDoList: permitToDo.map((group) => group.value),
+        app_permit_doing: permitDoing.map((group) => group.value),
+        app_permit_done: permitDone.map((group) => group.value),
+        app_permit_close: permitClose.map((group) => group.value),
       };
+    }
 
     if (modalType === "Plan")
       data = {
         plan_mvp_name: acronym,
         plan_startDate: startDate,
+        plan_app_acronym: applicationValue,
         plan_endDate: endDate,
         plan_color: color,
         plan_description: description,
@@ -95,11 +156,9 @@ const ApplicationForm = (props) => {
       data = {
         task_name: acronym,
         task_description: description,
-        task_state: state,
         task_plan: plan,
       };
 
-      console.log(data)
     submitNewApplication(data);
   };
 
@@ -133,6 +192,21 @@ const ApplicationForm = (props) => {
         />
       </Form.Group>
 
+      {modalType === "Application" && (
+        <>
+          <Form.Group className="mb-3">
+            <Form.Label htmlFor="rNumber">App Rnumber</Form.Label>
+            <Form.Control
+              id="rNumber"
+              type="number"
+              value={rNumber}
+              onChange={(e) => setRNumber(e.target.value)}
+              required
+            />
+          </Form.Group>
+        </>
+      )}
+
       {modalType !== "Task" && (
         <>
           <Form.Group className="mb-3">
@@ -143,6 +217,7 @@ const ApplicationForm = (props) => {
               placeholder="Enter Start Date"
               value={startDate}
               onChange={(e) => setStartDate(e.target.value)}
+              required
             />
           </Form.Group>
 
@@ -154,6 +229,7 @@ const ApplicationForm = (props) => {
               placeholder="Enter End Date"
               value={endDate}
               onChange={(e) => setEndDate(e.target.value)}
+              required
             />
           </Form.Group>
         </>
@@ -161,6 +237,18 @@ const ApplicationForm = (props) => {
 
       {modalType === "Plan" && (
         <>
+          <Form.Group className="mb-3">
+            <Form.Label htmlFor="application">Select Application:</Form.Label>
+            <Form.Select
+              id="application"
+              aria-label="Application"
+              value={applicationValue}
+              onChange={(e) => setApplicationValue(e.target.value)}
+            >
+              {optionsArray}
+            </Form.Select>
+          </Form.Group>
+
           <Form.Label htmlFor="groupColor">Group category color</Form.Label>
           <Form.Control
             type="color"
@@ -181,24 +269,9 @@ const ApplicationForm = (props) => {
               aria-label="Plan"
               value={plan}
               onChange={(e) => setPlan(e.target.value)}
+              
             >
               {optionsArray}
-            </Form.Select>
-          </Form.Group>
-
-          <Form.Group className="mb-3">
-            <Form.Label htmlFor="state">Task State:</Form.Label>
-            <Form.Select
-              id="state"
-              aria-label="State"
-              value={state}
-              onChange={(e) => setState(e.target.value)}
-            >
-              <option value="open">Open</option>
-              <option value="toDoList">To-Do</option>
-              <option value="doing">Doing</option>
-              <option value="done">Done</option>
-              <option value="close">Completed</option>
             </Form.Select>
           </Form.Group>
         </>
@@ -206,73 +279,66 @@ const ApplicationForm = (props) => {
 
       {modalType === "Application" && (
         <>
-          <h4 className="border-top pt-1">Permission settings</h4>
+          <h5 className="border-top pt-1">Permission settings</h5>
 
-          <Form.Group className="mb-3">
-            <Form.Label htmlFor="permitCreate">Create new task:</Form.Label>
-            <Form.Select
-              id="permitCreate"
-              aria-label="Role"
-              value={permitCreate}
-              onChange={(e) => setPermitCreate(e.target.value)}
-            >
-              {optionsArray}
-            </Form.Select>
-          </Form.Group>
+          <Form.Label>Create new task:</Form.Label>
+          <Select
+            options={optionsArray}
+            closeMenuOnSelect={false}
+            isMulti
+            value={permitCreate}
+            onChange={(values) => setPermitCreate(values)}
+            placeholder="Select Groups"
+            required
+          />
 
-          <Form.Group className="mb-3">
-            <Form.Label htmlFor="permitToDo">Approve new task:</Form.Label>
-            <Form.Select
-              id="permitToDo"
-              aria-label="Role"
-              value={permitToDo}
-              onChange={(e) => setPermitToDo(e.target.value)}
-            >
-              {optionsArray}
-            </Form.Select>
-          </Form.Group>
+          <Form.Label className="mt-3">Approve new task:</Form.Label>
+          <Select
+            options={optionsArray}
+            closeMenuOnSelect={false}
+            isMulti
+            value={permitToDo}
+            onChange={(values) => setPermitToDo(values)}
+            placeholder="Select Groups"
+            required
+          />
 
-          <Form.Group className="mb-3">
-            <Form.Label htmlFor="permitDoing">
-              Update task state to "Doing":
-            </Form.Label>
-            <Form.Select
-              id="permitDoing"
-              aria-label="Role"
-              value={permitDoing}
-              onChange={(e) => setPermitDoing(e.target.value)}
-            >
-              {optionsArray}
-            </Form.Select>
-          </Form.Group>
+          <Form.Label className="mt-3">
+            Update task state to "Doing":
+          </Form.Label>
+          <Select
+            options={optionsArray}
+            closeMenuOnSelect={false}
+            isMulti
+            value={permitDoing}
+            onChange={(values) => setPermitDoing(values)}
+            placeholder="Select Groups"
+            required
+          />
 
-          <Form.Group className="mb-3">
-            <Form.Label htmlFor="permitDone">
-              Update task state to "Completed":
-            </Form.Label>
-            <Form.Select
-              id="permitDone"
-              aria-label="Role"
-              value={permitDone}
-              onChange={(e) => setPermitDone(e.target.value)}
-            >
-              {optionsArray}
-            </Form.Select>
-          </Form.Group>
+          <Form.Label className="mt-3">
+            Update task state to "Done":
+          </Form.Label>
+          <Select
+            options={optionsArray}
+            closeMenuOnSelect={false}
+            isMulti
+            value={permitDone}
+            onChange={(values) => setPermitDone(values)}
+            placeholder="Select Groups"
+            required
+          />
 
-          <Form.Group className="mb-3">
-            <Form.Label htmlFor="permitClose">
-              Approve completed task:
-            </Form.Label>
-            <Form.Select
-              id="permitClose"
-              aria-label="Role"
-              value={permitClose}
-              onChange={(e) => setPermitClose(e.target.value)}
-            >
-              {optionsArray}
-            </Form.Select>
-          </Form.Group>
+          <Form.Label className="mt-3">Approve completed task:</Form.Label>
+          <Select
+            options={optionsArray}
+            closeMenuOnSelect={false}
+            isMulti
+            value={permitClose}
+            onChange={(values) => setPermitClose(values)}
+            placeholder="Select Groups"
+            required
+          />
         </>
       )}
 

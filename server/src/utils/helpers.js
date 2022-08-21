@@ -47,16 +47,23 @@ exports.compareGroups = (userGroups, groups) => {
   return result;
 };
 
-exports.checkGroupId = async (userid, groupId) => {
-  const query = `SELECT t1.* FROM assignment.user_groups t1 INNER JOIN assignment.groups t2 ON t1.group_id = t2.id WHERE t1.user_id = ? AND t2.id = ?`;
-  const results = await db.promise().query(query, [userid, groupId]);
-  return results[0].length ? true : false;
+// exports.checkGroupId = async (userid, groupId) => {
+//   const query = `SELECT t1.* FROM assignment.user_groups t1 INNER JOIN assignment.groups t2 ON t1.group_id = t2.id WHERE t1.user_id = ? AND t2.id = ?`;
+//   const results = await db.promise().query(query, [userid, groupId]);
+//   return results[0].length ? true : false;
+// };
+
+exports.checkGroupId = async (userid, groupIdArr) => {
+  const groupIdString = groupIdArr.replace("[", "(").replace("]", ")")
+  const query = `SELECT t1.* FROM assignment.user_groups t1 INNER JOIN assignment.groups t2 ON t1.group_id = t2.id WHERE t1.user_id = ? AND t2.id IN ${groupIdString}`;
+  const results = await db.promise().query(query, [userid]);
+  return results[0].length;
 };
 
 exports.checkGroupName = async (userid, groupname) => {
   const query = `SELECT t1.* FROM assignment.user_groups t1 INNER JOIN assignment.groups t2 ON t1.group_id = t2.id WHERE t1.user_id = ? AND t2.name = ?`;
   const results = await db.promise().query(query, [userid, groupname]);
-  return results[0].length ? true : false;
+  return results[0].length;
 };
 
 exports.createDateTime = () => {

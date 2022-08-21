@@ -45,9 +45,18 @@ export const createGroup = (groupData) => URL.post(`/users/allgroups`, groupData
 export const getAllApplications = () => URL.get(`/tasks/applications`, {signal: controller.signal})
 export const createApplication = (applicationData) => URL.post(`/tasks/applications`, applicationData)
 
-export const getAllPlans = (appId) => URL.get(`/tasks/${appId}/plans`, {signal: controller.signal})
+//plans
+export const getAllPlans = () => URL.get(`/tasks/plans`, {signal: controller.signal})
+export const getApplicationPlans = (appId) => URL.get(`/tasks/${appId}/plans`, {signal: controller.signal})
 export const createPlan = (appId, planData) => URL.post(`/tasks/${appId}/plans`, planData)
 
-export const getAllTasks = (appId) => URL.get(`/tasks/${appId}`, {signal: controller.signal})
+//task(s) fetching
+export const getAllTasks = () => URL.get(`/tasks/tasks`, {signal: controller.signal})
+export const findTask = (taskId) => URL.get(`/tasks/tasks/${taskId}`)
+
+//application-based task operations
+export const getAllApplicationTasks = (appId) => URL.get(`/tasks/${appId}`, {signal: controller.signal})
 export const createTask = (appId, taskData) => URL.post(`/tasks/${appId}`, taskData)
 export const updateTaskState = (appId, taskId, stateData) => URL.patch(`/tasks/${appId}/${taskId}`, stateData)
+export const sendTaskEmail = (appId, taskId) => URL.post(`/tasks/${appId}/${taskId}/email`)
+export const editTask = (appId, taskId, taskData) => URL.post(`/tasks/${appId}/${taskId}`, taskData)

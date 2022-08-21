@@ -1,7 +1,6 @@
 import { createContext, useState } from "react";
 import Toast from "react-bootstrap/Toast";
 import ToastContainer from "react-bootstrap/ToastContainer";
-import AppModal from "../components/AppModal";
 
 export const ToastContext = createContext();
 

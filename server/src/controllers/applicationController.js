@@ -24,6 +24,7 @@ exports.createApplication = async (req, res, next) => {
   const {
     app_acronym,
     app_description,
+    app_Rnumber,
     app_startDate,
     app_endDate,
     app_permit_create,
@@ -52,19 +53,20 @@ exports.createApplication = async (req, res, next) => {
     } else {
       /** If application acronym is acceptable */
       const query =
-        "INSERT INTO assignment.applications (app_acronym, app_description, app_startDate, app_endDate, app_permit_create, app_permit_toDoList, app_permit_doing, app_permit_done, app_permit_close) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?); ";
+        "INSERT INTO assignment.applications (app_acronym, app_description, app_Rnumber, app_startDate, app_endDate, app_permit_create, app_permit_toDoList, app_permit_doing, app_permit_done, app_permit_close) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?); ";
       await db
         .promise()
         .query(query, [
           app_acronym,
           app_description,
+          app_Rnumber,
           app_startDate,
           app_endDate,
-          app_permit_create,
-          app_permit_toDoList,
-          app_permit_doing,
-          app_permit_done,
-          app_permit_close,
+          JSON.stringify(app_permit_create),
+          JSON.stringify(app_permit_toDoList),
+          JSON.stringify(app_permit_doing),
+          JSON.stringify(app_permit_done),
+          JSON.stringify(app_permit_close),
         ]);
 
       return res

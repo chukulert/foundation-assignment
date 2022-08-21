@@ -1,59 +1,135 @@
 import { useEffect, useContext, useState } from "react";
 import Container from "react-bootstrap/Container";
+import Form from "react-bootstrap/Form";
 import Button from "react-bootstrap/Button";
 import { ApplicationContext } from "../../context/ApplicationContext";
 import { formatDateString } from "../../utils/helpers";
 import { AuthContext } from "../../context/AuthContext";
-import Accordion from "react-bootstrap/Accordion";
-import Col from "react-bootstrap/Col";
-import Row from "react-bootstrap/Row";
 import Tooltip from "react-bootstrap/Tooltip";
 import OverlayTrigger from "react-bootstrap/OverlayTrigger";
+import Dropdown from "react-bootstrap/Dropdown";
+import TaskNotes from "./TaskNotes";
 
 const TaskModalDetails = (props) => {
-  const { handleShowModal, updateTaskState } = props;
-  const { selectedApplication, selectedTask, checkTaskOptions } =
+  const { handleShowModal, updateTaskState, editTaskDetails } = props;
+  const { applications, plans, selectedTask, checkTaskOptions } =
     useContext(ApplicationContext);
   const { user } = useContext(AuthContext);
-
+  const [application, setApplication] = useState(null);
   const [promote, setPromote] = useState(null);
   const [demote, setDemote] = useState(null);
+  const [inputNotes, setInputNotes] = useState("");
+  const [planOptions, setPlanOptions] = useState([]);
+  const [isManager, setIsManager] = useState(false);
 
   useEffect(() => {
-    if (selectedApplication && selectedTask && user) {
-      const taskOptions = checkTaskOptions(
-        selectedApplication,
-        user,
-        selectedTask
-      );
+    const application = applications.find((app) => {
+      return app.app_acronym === selectedTask.task_app_acronym;
+    });
+
+    /**This ocnfigures the options allowed to promote/demote a task on the modal */
+    if (application && selectedTask) {
+      const taskOptions = checkTaskOptions(application, selectedTask);
       if (taskOptions.promote) setPromote(taskOptions.promote);
       if (taskOptions.demote) setDemote(taskOptions.demote);
+      setApplication(application);
+
+      user.groups.forEach((group) => {
+        if (group.name === "manager") {
+          setIsManager(true);
+        }
+      });
     }
-  }, [selectedApplication, selectedTask, user]);
 
-  const taskNotesArr = JSON.parse(selectedTask?.task_notes);
+    /**This configures the plan options displayed on the modal */
+    if (selectedTask) {
+      const applicationPlans = plans.filter((plan) => {
+        return plan.plan_app_acronym === application.app_acronym;
+      });
+      let plansList = applicationPlans.map((plan) => (
+        <Dropdown.Item
+          id={plan.plan_mvp_name}
+          onClick={handlePlanClick}
+          key={plan.plan_mvp_name}
+        >
+          {plan.plan_mvp_name}
+        </Dropdown.Item>
+      ));
+      if (!selectedTask.task_plan) {
+        setPlanOptions(plansList);
+      } else {
+        plansList = plansList.filter((plan) => {
+          return selectedTask.task_plan !== plan.key;
+        });
+        const removePlanOption = (
+          <Dropdown.Item id={""} onClick={handlePlanClick} key={0}>
+            Remove Plan
+          </Dropdown.Item>
+        );
+        setPlanOptions([removePlanOption, ...plansList]);
+      }
+    }
+  }, [applications, plans, selectedTask, user]);
 
-  const taskNotes = taskNotesArr.map((task, index) => (
-    <Row key={task.Timestamp}>
-      <Col xs lg="3">
-        {task.userId}
-      </Col>
-      <Col xs lg="3">
-        {task.state}
-      </Col>
-      <Col xs lg="5">
-        {task.Timestamp}
-      </Col>
-    </Row>
-  ));
+  const handleFormSubmit = (e) => {
+    e.preventDefault();
+    editTaskDetails(selectedTask, { notes: inputNotes });
+  };
+
+  const handlePlanClick = (e) => {
+    editTaskDetails(selectedTask, { task_plan: e.target.id });
+  };
 
   const onClickHandler = (type) => {
-    updateTaskState(selectedTask, type);
+    updateTaskState(selectedTask, application, type);
     handleShowModal();
   };
 
   return (
-    <Container>
+    <Container className="smallFont">
+      {selectedTask.task_state !== "close" && (
+        <div className="d-flex justify-content-between py-3 border-bottom">
+          <OverlayTrigger
+            overlay={
+              <Tooltip id={`demote`}>Demote task to previous step.</Tooltip>
+            }
+          >
+            <Button
+              className={`${demote ? "" : "hidden"}`}
+              size="sm"
+              onClick={() => onClickHandler("demote")}
+              variant="outline-danger"
+            >
+              {"<< Demote"}
+            </Button>
+          </OverlayTrigger>
+
+          {isManager && (
+            <Dropdown>
+              <Dropdown.Toggle variant="primary" id="dropdown-basic" size="sm">
+                Assign Plan
+              </Dropdown.Toggle>
+              <Dropdown.Menu>{planOptions}</Dropdown.Menu>
+            </Dropdown>
+          )}
+
+          <OverlayTrigger
+            overlay={
+              <Tooltip id={`promote`}>Promote task to next step.</Tooltip>
+            }
+          >
+            <Button
+              size="sm"
+              onClick={() => onClickHandler("promote")}
+              variant="outline-success"
+              className={`${promote ? "" : "hidden"}`}
+            >
+              {"Promote >>"}
+            </Button>
+          </OverlayTrigger>
+        </div>
+      )}
+
       <div className="mt-3 border-bottom">
         <p>
           <strong>Application: </strong>
@@ -61,7 +137,7 @@ const TaskModalDetails = (props) => {
         </p>
         <p>
           <strong>Plan: </strong>
-          {selectedTask.task_plan}
+          {selectedTask.task_plan ? selectedTask.task_plan : "Nil"}
         </p>
         <p>
           <strong>Created by: </strong>
@@ -75,65 +151,39 @@ const TaskModalDetails = (props) => {
           <strong>Last updated by: </strong>
           User {selectedTask.task_owner}
         </p>
-        <p>
+        <p className="d-flex">
           <strong>Description: </strong>
-          {selectedTask.task_description}
+          <textarea
+            readOnly={true}
+            className="mx-3"
+            cols="60"
+            value={selectedTask.task_description}
+          ></textarea>
         </p>
       </div>
 
-      <div className="d-flex justify-content-end mt-3 mb-3">
-        {demote && (
-          <OverlayTrigger
-            overlay={
-              <Tooltip id={`demote`}>Demote task to previous step.</Tooltip>
-            }
-          >
-            <Button
-              className="mx-3"
-              size="sm"
-              onClick={() => onClickHandler("demote")}
-              variant="outline-danger"
-            >
-              {"<<"}
-            </Button>
-          </OverlayTrigger>
-        )}
-        {promote && (
-          <OverlayTrigger
-            overlay={
-              <Tooltip id={`promote`}>Promote task to next step.</Tooltip>
-            }
-          >
-            <Button
-              size="sm"
-              onClick={() => onClickHandler("promote")}
-              variant="outline-success"
-            >
-              {">>"}
-            </Button>
-          </OverlayTrigger>
-        )}
-      </div>
+      <Form onSubmit={handleFormSubmit} className="p-3">
+        <Form.Group className="mb-3 border-bottom">
+          <Form.Label htmlFor="notes">
+            <strong>New Task Note</strong>
+          </Form.Label>
+          <Form.Control
+            id="notes"
+            as="textarea"
+            rows={3}
+            placeholder="Enter new task note"
+            value={inputNotes}
+            onChange={(e) => setInputNotes(e.target.value)}
+          />
+        </Form.Group>
 
-      <Accordion flush>
-        <Accordion.Item eventKey="0">
-          <Accordion.Header>Task Audit Log</Accordion.Header>
-          <Accordion.Body>
-            <Row>
-              <Col xs lg="3">
-                <strong>User ID</strong>
-              </Col>
-              <Col xs lg="3">
-                <strong>State</strong>
-              </Col>
-              <Col xs lg="5">
-                <strong>Timestamp</strong>
-              </Col>
-            </Row>
-            {taskNotes}
-          </Accordion.Body>
-        </Accordion.Item>
-      </Accordion>
+        <div className="d-flex justify-content-end">
+          <Button variant="primary" type="submit" size="sm">
+            Submit
+          </Button>
+        </div>
+      </Form>
+      <TaskNotes />
     </Container>
   );
 };

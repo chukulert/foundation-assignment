@@ -6,34 +6,43 @@ import { useEffect, useState } from "react";
 import { AuthContext } from "../../context/AuthContext";
 import Badge from "react-bootstrap/Badge";
 import { capitalizeFirstLetter } from "../../utils/helpers";
-import Tooltip from 'react-bootstrap/Tooltip';
-import OverlayTrigger from 'react-bootstrap/OverlayTrigger';
+import Tooltip from "react-bootstrap/Tooltip";
+import OverlayTrigger from "react-bootstrap/OverlayTrigger";
 
 const TaskItem = (props) => {
   const { task, handleShowModal, updateTaskState } = props;
-  const {
-    setSelectedTask,
-    checkTaskOptions,
-    selectedApplication,
-  } = useContext(ApplicationContext);
+  const { setSelectedTask, checkTaskOptions, applications, plans, applicationPermissions } =
+    useContext(ApplicationContext);
   const [promote, setPromote] = useState(null);
   const [demote, setDemote] = useState(null);
+  const [plan, setPlan] = useState(null);
+  const [application, setApplication] = useState(null);
   const { user } = useContext(AuthContext);
 
   useEffect(() => {
-    if (selectedApplication && user && task) {
-      const taskOptions = checkTaskOptions(selectedApplication, user, task);
+    const application = applications.find((app) => {
+      return app.app_acronym === task.task_app_acronym;
+    });
+    const taskPlan = plans.find((plan) => {
+      return (
+        plan.plan_mvp_name === task.task_plan &&
+        plan.plan_app_acronym === task.task_app_acronym
+      );
+    });
+
+    if (application && user && task) {
+      const taskOptions = checkTaskOptions(application, task);
       if (taskOptions.promote) setPromote(taskOptions.promote);
       if (taskOptions.demote) setDemote(taskOptions.demote);
+      setApplication(application);
     }
-  }, [selectedApplication, user, task]);
+    taskPlan ? setPlan(taskPlan) : setPlan(null)
+  }, [applications, plans, user, task]);
 
   const truncateCharacters = (string) => {
-    if (string.length > 25) return string.slice(0, 45) + "...";
+    if (string.length > 18) return string.slice(0, 15) + "...";
     return string;
   };
-
-  const description = truncateCharacters(task?.task_description);
 
   const handleDetailsClick = () => {
     setSelectedTask(task);
@@ -42,69 +51,80 @@ const TaskItem = (props) => {
 
   const handleStatusClick = (type) => {
     setSelectedTask(task);
-    updateTaskState(task, type);
+    updateTaskState(task, application, type);
   };
 
   return (
     <Card
-      style={{ width: "12rem", height: "15rem" }}
-      className="mt-5"
+      style={{
+        width: "10rem",
+        height: "13rem",
+        borderLeft: plan ? `2px solid ${plan?.plan_color}` : "none" 
+      }}
+      className="mt-5 card"
     >
       <Card.Header className="d-flex justify-content-between">
-        <p>{task.task_plan ? task.task_plan : ""} </p>
+        <p>
+          App: <strong>{task.task_app_acronym}</strong>
+        </p>
         <p>
           <Badge pill bg="dark">
-            {task.task_state === "toDoList" ? "To-Do" : capitalizeFirstLetter(task.task_state)}
+            {task.task_state === "toDoList"
+              ? "To-Do"
+              : capitalizeFirstLetter(task.task_state)}
           </Badge>
         </p>
       </Card.Header>
       <Card.Body>
-        <Card.Title>{task.task_name}</Card.Title>
-        <Card.Text>{description}</Card.Text>
+        <div className="smallFont">
+          <p><strong>Plan: </strong>{task.task_plan ? truncateCharacters(task.task_plan) : "Nil"}</p>
+          <p>{truncateCharacters(task.task_name)}</p>
+        </div>
       </Card.Body>
       <Card.Footer>
-        <div className="fw-light fs-8 mb-1">
-           Updated by: User {task.task_owner}
-        </div>
         <div className="d-flex justify-content-between">
-         
-            <OverlayTrigger
+          <OverlayTrigger
             overlay={
-                <Tooltip id={`demote`}>
-                  Demote task to previous step.
-                </Tooltip>
-              }>
+              <Tooltip id={`demote`}>Demote task to previous step.</Tooltip>
+            }
+          >
             <Button
               size="sm"
               variant="outline-danger"
               onClick={() => handleStatusClick("demote")}
-              disabled={demote ? false : true}
+              className={demote ? "" : "hidden"}
             >
               {"<<"}
             </Button>
-            </OverlayTrigger>
-          
-          <Button size="sm" variant="secondary" onClick={handleDetailsClick}>
-            Details
-          </Button>
-    
-          
-            <OverlayTrigger
+          </OverlayTrigger>
+
+          <OverlayTrigger
+            overlay={<Tooltip id={`details`}>Task details</Tooltip>}
+          >
+            <Button
+              size="sm"
+              variant="secondary"
+              id="details"
+              onClick={handleDetailsClick}
+            >
+              +
+            </Button>
+          </OverlayTrigger>
+
+          <OverlayTrigger
             overlay={
-                <Tooltip id={`promote`}>
-                  Promote task to next step.
-                </Tooltip>
-              }>
+              <Tooltip id={`promote`}>Promote task to next step.</Tooltip>
+            }
+          >
             <Button
               size="sm"
               variant="outline-success"
               onClick={() => handleStatusClick("promote")}
-              disabled={promote ? false : true}
+              className={`"btnFont" ${promote ? "" : "hidden"}`}
             >
               {">>"}
             </Button>
-            </OverlayTrigger>
-       
+          </OverlayTrigger>
         </div>
       </Card.Footer>
     </Card>

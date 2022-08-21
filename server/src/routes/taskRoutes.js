@@ -16,20 +16,29 @@ router
   .post(applicationController.createApplication);
 
 /** Plan routes */
+router.route("/plans").get(planController.getAllPlans);
+
 router
   .route("/:appId/plans")
-  .get(planController.getAllPlans)
+  .get(planController.getApplicationPlans)
   .post(planController.createPlan);
 
 /** Task routes */
+router.route("/tasks").get(taskController.getAllTasks);
+router.route("/tasks/:taskId").get(taskController.findTask)
+
 router
   .route("/:appId")
-  .get(taskController.getAllTasks)
+  .get(taskController.getAllApplicationTasks)
   .post(taskController.createTask);
 
 router
   .route("/:appId/:taskId")
-//   .post(taskController.addTaskNotes)
+  .post(taskController.editTask)
   .patch(taskController.updateTaskState);
+
+router
+  .route("/:appId/:taskId/email")
+  .post(taskController.sendEmailNotification);
 
 module.exports = router;

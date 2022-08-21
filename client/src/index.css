@@ -1,3 +1,43 @@
 .smallFont {
-    font-size: 14px;
+    font-size: .8rem;
+}
+.card {
+    transition: .5s;
+}
+
+.card:hover {
+    box-shadow: rgba(14, 30, 37, 0.12) 0px 2px 4px 0px, rgba(14, 30, 37, 0.32) 0px 2px 16px 0px;
+}
+
+
+.hidden {
+    visibility: hidden;
+}
+
+:root {
+    --bs-btn-font-size : .6rem !important;
+}
+
+.btnFont {
+    font-size: .6rem !important;
+}
+
+.taskNotes {
+    max-height: 20rem;
+}
+
+.taskNote {
+    max-height: inherit;
+}
+
+.hide {
+    display:none;
+  }
+
+.pointer {
+    cursor: pointer;
+}
+
+.list {
+    list-style-type: disc;
 }

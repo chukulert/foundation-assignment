@@ -60,7 +60,7 @@ const UserManagement = () => {
   };
 
   const submitEditUser = async (data) => {
-    console.log(data);
+  
     try {
       await api.updateUser(data);
       await fetchAllUsersData();
@@ -74,7 +74,7 @@ const UserManagement = () => {
   };
 
   const submitNewUser = async (data) => {
-    console.log(data);
+  
     try {
       await api.createUser(data);
       await fetchAllUsersData();

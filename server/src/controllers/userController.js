@@ -9,7 +9,6 @@ const findUser = async (username) => {
 };
 
 
-
 /** Minimum 8 characters and maximum 10 characters
  Comprise of alphabets , numbers, and special characters */
 const validPassword = (password) => {
@@ -163,13 +162,13 @@ exports.updateUser = async (req, res) => {
       .promise()
       .query(query, [isActive, email, username]);
 
-      /**returns a hashmap 
+    /**returns a hashmap 
         {
           add: [groupId],
           remove: [groupId]
         }
       */
-    const groupsQueries = compareGroups(userGroups, groups); 
+    const groupsQueries = compareGroups(userGroups, groups);
 
     const addGroups = groupsQueries.add.map(async (grp) => {
       const query = `INSERT INTO assignment.user_groups (user_id, group_id) VALUES (?, ?)`;
@@ -208,4 +207,10 @@ exports.updateUserPassword = async (req, res) => {
   } catch (error) {
     res.status(400).json({ message: error.message });
   }
+};
+
+exports.getLeadUsers = async () => {
+  const query = `SELECT t1.email FROM assignment.users t1 INNER JOIN assignment.user_groups t2 ON t1.id = t2.user_id INNER JOIN assignment.groups t3 ON t2.group_id = t3.id WHERE t3.name = ? AND t1.isActive = 1`;
+  const results = await db.promise().query(query, "lead");
+  return results[0]
 };

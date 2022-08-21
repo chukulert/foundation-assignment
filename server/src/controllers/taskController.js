@@ -1,15 +1,45 @@
 const db = require("../config/database");
-const { checkGroupId, createDateTime } = require("../utils/helpers");
+const {
+  checkGroupId,
+  createDateTime,
+  checkGroupName,
+} = require("../utils/helpers");
 const { findApplication } = require("./applicationController");
+const sendEmail = require("../utils/email");
+const userController = require("./userController");
 
 const getTask = async (taskId) => {
   const query = `SELECT * FROM assignment.tasks WHERE task_id = ?`;
-  const queryPlans = await db.promise().query(query, [taskId]);
-  const results = queryPlans[0][0];
+  const queryTasks = await db.promise().query(query, [taskId]);
+  const results = queryTasks[0][0];
   return results;
 };
 
+exports.findTask = async (req, res) => {
+  const { taskId } = req.params;
+
+  try {
+    const query = `SELECT * FROM assignment.tasks WHERE task_id = ?`;
+    const queryTask = await db.promise().query(query, [taskId]);
+    const results = queryTask[0][0];
+    return res.status(200).json(results);
+  } catch (error) {
+    return res.status(400).json({ message: error.message });
+  }
+};
+
 exports.getAllTasks = async (req, res) => {
+  try {
+    const query = `SELECT * FROM assignment.tasks`;
+    const queryTasks = await db.promise().query(query);
+    const results = queryTasks[0];
+    return res.status(200).json(results);
+  } catch (error) {
+    return res.status(400).json({ message: error.message });
+  }
+};
+
+exports.getAllApplicationTasks = async (req, res) => {
   const app_acronym = req.params.appId;
   try {
     const query = `SELECT * FROM assignment.tasks WHERE task_app_acronym = ?`;
@@ -23,7 +53,7 @@ exports.getAllTasks = async (req, res) => {
 
 exports.createTask = async (req, res, next) => {
   const appAcronym = req.params.appId;
-  const { task_name, task_description, task_plan, task_state } = req.body;
+  const { task_name, task_description, task_plan } = req.body;
 
   try {
     /** check for existing application */
@@ -33,6 +63,7 @@ exports.createTask = async (req, res, next) => {
       req.user.id,
       application.app_permit_create
     );
+
 
     if (!permittedUser) {
       return res.status(401).json({
@@ -44,11 +75,12 @@ exports.createTask = async (req, res, next) => {
 
     const date = createDateTime();
 
-    const taskNote = JSON.stringify([
+    const newTaskNote = JSON.stringify([
       {
         userId: req.user.id,
-        task_state,
-        Timestamp: date,
+        state: "open",
+        Timestamp: createDateTime(),
+        notes: "Task created <system generated>",
       },
     ]);
 
@@ -62,11 +94,11 @@ exports.createTask = async (req, res, next) => {
         task_description,
         task_plan,
         appAcronym,
-        task_state,
+        "open",
         req.user.id,
         req.user.id,
         date,
-        taskNote,
+        newTaskNote,
       ]);
 
     const query2 =
@@ -77,6 +109,69 @@ exports.createTask = async (req, res, next) => {
 
     await Promise.all([newTask, updateApp]);
     return res.status(200).json({ message: "Task successfully created" });
+  } catch (error) {
+    res.json({ message: error.message });
+  }
+};
+
+const addTaskNotes = (userId, task, state, notes) => {
+  const taskNotes = JSON.parse(task.task_notes);
+
+  const newTaskNote = {
+    userId,
+    state,
+    Timestamp: createDateTime(),
+    notes,
+  };
+
+  return JSON.stringify([...taskNotes, newTaskNote]);
+};
+
+exports.editTask = async (req, res) => {
+  const { taskId } = req.params;
+  const { notes, task_plan } = req.body;
+
+
+  if (!notes && task_plan === undefined)
+    return res.status(500).json({ message: "There is no data sent." });
+
+  try {
+    const task = await getTask(taskId);
+    if (!task) {
+      return res
+        .status(401)
+        .json({ message: "There is no task available in this application." });
+    }
+
+    const state = task.task_state;
+
+    if (task_plan || task_plan === "") {
+      const permittedUser = await checkGroupName(req.user.id, "manager");
+
+      if (!permittedUser) {
+        return res.status(401).json({
+          message: "You do not have permission to perform this action.",
+        });
+      }
+      const taskNotes = addTaskNotes(
+        req.user.id,
+        task,
+        state,
+        task_plan === ""
+          ? "Removed task plan"
+          : `Task plan updated to ${task_plan}`
+      );
+      const query =
+        "UPDATE assignment.tasks SET task_notes = ?, task_plan = ? WHERE task_id = ?";
+      await db.promise().query(query, [taskNotes, task_plan, taskId]);
+      res.status(200).json({ message: "Task plan successfully updated." });
+    } else {
+      const taskNotes = addTaskNotes(req.user.id, task, state, notes);
+      const query =
+        "UPDATE assignment.tasks SET task_notes = ? WHERE task_id = ?";
+      await db.promise().query(query, [taskNotes, taskId]);
+      res.status(200).json({ message: "Task note successfully added." });
+    }
   } catch (error) {
     res.json({ message: error.message });
   }
@@ -99,16 +194,35 @@ const permittedUser = async (state, currentState, application, userId) => {
   return false;
 };
 
-const addTaskNotes = (userId, task, state) => {
-  const taskNotes = JSON.parse(task.task_notes);
+exports.sendEmailNotification = async (req, res) => {
+  const { taskId } = req.params;
 
-  const newTaskNote = {
-    userId,
-    state,
-    Timestamp: createDateTime(),
-  };
+  try {
+    const task = await getTask(taskId);
+    if (!task || task.task_state !== "done")
+      return res
+        .status(500)
+        .json({ message: "Task does not exist / is not completed" });
 
-  return JSON.stringify([...taskNotes, newTaskNote]);
+    const leadUsers = await userController.getLeadUsers();
+
+    Promise.all(
+      leadUsers.map(async (user) => {
+        await sendEmail({
+          email: user.email,
+          subject: `Task (ID:${task.task_id})'s completion is pending your approval`,
+          message: `Task (ID:${
+            task.task_id
+          })'s completion is pending your approval\nApplication: ${
+            task.task_app_acronym
+          }\nPlan: ${task.task_plan}\nSent on ${createDateTime()}`,
+        });
+      })
+    );
+    res.status(200).json({ messsage: "Emails successfully sent." });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
 };
 
 exports.updateTaskState = async (req, res) => {
@@ -120,13 +234,13 @@ exports.updateTaskState = async (req, res) => {
 
   try {
     const task = await getTask(taskId);
-    const currentState = task.task_state;
-    if (!task || !task.task_plan_acronym === appId) {
+
+    if (!task || !task.task_plan_acronym === application.app_acronym) {
       return res
         .status(401)
         .json({ message: "There is no task available in this application." });
     }
-
+    const currentState = task.task_state;
     const permitted = await permittedUser(
       state,
       currentState,
@@ -134,12 +248,19 @@ exports.updateTaskState = async (req, res) => {
       req.user.id
     );
 
-    if (permitted) {
-      const taskNotes = addTaskNotes(req.user.id, task, state);
+    const newTaskNote = addTaskNotes(
+      req.user.id,
+      task,
+      state,
+      `Task status changed to ${state}. <system generated>`
+    );
 
+    if (permitted) {
       const query =
         "UPDATE assignment.tasks SET task_state = ?, task_owner = ?, task_notes = ? WHERE task_id = ?";
-      await db.promise().query(query, [state, req.user.id, taskNotes, taskId]);
+      await db
+        .promise()
+        .query(query, [state, req.user.id, newTaskNote, taskId]);
 
       return res
         .status(200)

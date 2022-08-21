@@ -14,25 +14,47 @@ import Dropdown from "react-bootstrap/Dropdown";
 import DropdownButton from "react-bootstrap/DropdownButton";
 import InputGroup from "react-bootstrap/InputGroup";
 import "../index.css";
+import { AuthContext } from "../context/AuthContext";
+import Sidebar from "../components/SideBar/SideBar";
+import ApplicationModalDetails from "../components/Application/ApplicationModalDetails";
 
 const Home = () => {
-  const [applications, setApplications] = useState([]);
-  const [plans, setPlans] = useState([]);
-  const [tasks, setTasks] = useState([]);
   const [showModal, setShowModal] = useState(false);
   const [showFormModal, setShowFormModal] = useState(false);
+
   const [modalType, setModalType] = useState(null);
   const [allGroupsData, setAllGroupsData] = useState([]);
+  const [isLead, setIsLead] = useState(false);
+  const [isManager, setIsManager] = useState(false);
+  const [isTaskCreator, setIsTaskCreator] = useState(false);
 
-  const { selectedApplication, setSelectedApplication, selectedTask } =
-    useContext(ApplicationContext);
+  const [displayedPlans, setDisplayedPlans] = useState([]);
+  const [displayedTasks, setDisplayedTasks] = useState([]);
 
+  const {
+    selectedApplication,
+    setSelectedApplication,
+    selectedTask,
+    setSelectedTask,
+    setPlans,
+    setApplications,
+    setTasks,
+    plans,
+    tasks,
+    applications,
+  } = useContext(ApplicationContext);
   const { setShowToast, setToastMsg } = useContext(ToastContext);
+  const { user } = useContext(AuthContext);
 
   useEffect(() => {
     const controller = new AbortController();
     const fetchAllApplications = async () => {
-      await Promise.all([fetchApplications(), fetchAllGroupsData()]);
+      await Promise.all([
+        fetchApplications(),
+        fetchAllGroupsData(),
+        fetchAllTasks(),
+        fetchAllPlans(),
+      ]);
     };
     fetchAllApplications();
 
@@ -42,32 +64,44 @@ const Home = () => {
   }, []);
 
   useEffect(() => {
-    const controller = new AbortController();
+    if (selectedApplication) {
+      const filteredTasks = tasks.filter((task) => {
+        return task.task_app_acronym === selectedApplication.app_acronym;
+      });
+      const filteredPlans = plans.filter((plan) => {
+        return plan.plan_app_acronym === selectedApplication.app_acronym;
+      });
+      setDisplayedTasks(filteredTasks);
+      setDisplayedPlans(filteredPlans);
+    } else {
+      setDisplayedTasks(tasks);
+      setDisplayedPlans(plans);
+    }
+  }, [selectedApplication, tasks, plans]);
 
-    const fetchApplicationData = async () => {
-      await Promise.all([fetchTasks(), fetchPlans()]);
-    };
-
-    if (selectedApplication) fetchApplicationData();
-
-    return () => {
-      controller.abort();
-    };
-  }, [selectedApplication]);
+  useEffect(() => {
+    if (user) {
+      user.groups.forEach((group) => {
+        if (group.name === "manager") setIsManager(true);
+        if (group.name === "lead") setIsLead(true);
+      });
+      if (user.groupIDs.includes(selectedApplication?.app_permit_create))
+        setIsTaskCreator(true);
+    }
+  }, [user, selectedApplication]);
 
   const fetchApplications = async () => {
     const { data } = await api.getAllApplications();
     setApplications(data);
-    setSelectedApplication(data[0]);
   };
 
-  const fetchPlans = async () => {
-    const { data } = await api.getAllPlans(selectedApplication?.app_acronym);
+  const fetchAllPlans = async () => {
+    const { data } = await api.getAllPlans();
     setPlans(data);
   };
 
-  const fetchTasks = async () => {
-    const { data } = await api.getAllTasks(selectedApplication?.app_acronym);
+  const fetchAllTasks = async () => {
+    const { data } = await api.getAllTasks();
     setTasks(data);
   };
 
@@ -90,34 +124,34 @@ const Home = () => {
   };
 
   const submitNewApplication = async (formData) => {
-    console.log(formData);
     try {
       if (modalType === "Application") {
         await api.createApplication(formData);
+        await fetchApplications();
         setToastMsg(
           `New Application ${formData.app_acronym} is created successfully.`
         );
       }
       if (modalType === "Plan") {
-        await api.createPlan(selectedApplication.app_acronym, formData);
+        await api.createPlan(formData.plan_app_acronym, formData);
+        await fetchAllPlans();
         setToastMsg(
-          `New Plan ${formData.plan_mvp_name} is created successfully.`
+          `New Plan "${formData.plan_mvp_name}" is created successfully.`
         );
       }
 
       if (modalType === "Task") {
         await api.createTask(selectedApplication.app_acronym, formData);
-        await fetchTasks();
+        await fetchAllTasks();
         setToastMsg(`New Task ${formData.task_name} is created successfully.`);
       }
     } catch (error) {
       setToastMsg(error.response.data.message);
     }
-    handleShowFormModal();
     setShowToast(true);
   };
 
-  const updateTaskState = async (task, type) => {
+  const updateTaskState = async (task, application, type) => {
     let updateState = {
       state: null,
     };
@@ -136,12 +170,41 @@ const Home = () => {
 
     try {
       await api.updateTaskState(
-        selectedApplication.app_acronym,
+        application.app_acronym,
         task.task_id,
         updateState
       );
-      await fetchTasks();
-      setToastMsg("Task has been updated successfully.");
+      await fetchAllTasks();
+      setToastMsg(`Task state updated to "${updateState.state}" successfully.`);
+      if (type === "promote" && updateState.state === "done") {
+        await api.sendTaskEmail(application.app_acronym, task.task_id);
+      }
+    } catch (error) {
+      setToastMsg(error.response.data.message);
+    }
+    setShowToast(true);
+  };
+
+  const editTaskDetails = async (task, data) => {
+    try {
+      await api.editTask(task.app_acronym, task.task_id, data);
+      setToastMsg(
+        `${
+          data.notes
+            ? "Task note has been added successfully"
+            : "Task plan edited successfully"
+        }`
+      );
+      const fetchedData = await api.findTask(task.task_id);
+      const updatedTask = fetchedData.data;
+
+      const taskIndex = tasks.findIndex(
+        (task) => task.task_id === updatedTask.task_id
+      );
+      const tasksArr = [...tasks];
+      tasksArr[taskIndex] = updatedTask;
+      setTasks(tasksArr);
+      setSelectedTask(updatedTask);
     } catch (error) {
       setToastMsg(error.response.data.message);
     }
@@ -149,8 +212,12 @@ const Home = () => {
   };
 
   return (
-    <>
-      <Container className="smallFont">
+    <div className="d-flex">
+      <Sidebar
+        handleShowModal={handleShowModal}
+        allGroupsData={allGroupsData}
+      />
+      <Container className="smallFont mb-3 px-4">
         <div className="d-flex justify-content-between">
           <ApplicationContainer applications={applications} />
           <div>
@@ -160,23 +227,29 @@ const Home = () => {
                 title="+ New"
                 id="input-group"
               >
-                <Dropdown.Item
-                  onClick={() => handleShowFormModal("Application")}
-                >
-                  Add Application
-                </Dropdown.Item>
-                <Dropdown.Item onClick={() => handleShowFormModal("Plan")}>
-                  Add Plan
-                </Dropdown.Item>
-                <Dropdown.Item onClick={() => handleShowFormModal("Task")}>
-                  Add Task
-                </Dropdown.Item>cd d
+                {isLead && (
+                  <Dropdown.Item
+                    onClick={() => handleShowFormModal("Application")}
+                  >
+                    Add Application
+                  </Dropdown.Item>
+                )}
+                {isManager && (
+                  <Dropdown.Item onClick={() => handleShowFormModal("Plan")}>
+                    Add Plan
+                  </Dropdown.Item>
+                )}
+                {selectedApplication && (
+                  <Dropdown.Item onClick={() => handleShowFormModal("Task")}>
+                    Add Task
+                  </Dropdown.Item>
+                )}
               </DropdownButton>
             </InputGroup>
           </div>
         </div>
         <TaskContainer
-          tasks={tasks}
+          tasks={displayedTasks}
           handleShowModal={handleShowModal}
           updateTaskState={updateTaskState}
         />
@@ -184,12 +257,13 @@ const Home = () => {
 
       <AppModal
         showModal={showModal}
-        title={selectedTask?.task_name}
+        title={`${selectedTask?.task_name} (${selectedTask?.task_state})`}
         handleShowModal={handleShowModal}
       >
         <TaskModalDetails
           handleShowModal={handleShowModal}
           updateTaskState={updateTaskState}
+          editTaskDetails={editTaskDetails}
         />
       </AppModal>
 
@@ -202,10 +276,10 @@ const Home = () => {
           allGroupsData={allGroupsData}
           modalType={modalType}
           submitNewApplication={submitNewApplication}
-          plans={plans}
+          plans={displayedPlans}
         />
       </AppModal>
-    </>
+    </div>
   );
 };
 
