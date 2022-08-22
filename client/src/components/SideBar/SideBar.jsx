@@ -116,6 +116,7 @@ const SideBar = (props) => {
         <ApplicationModalDetails
           allGroupsData={allGroupsData}
           application={modalDisplayedApplication}
+          setModalDisplayedApplication={setModalDisplayedApplication}
           plan={modalDisplayedPlan}
         />
       </AppModal>

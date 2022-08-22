@@ -77,3 +77,43 @@ exports.createApplication = async (req, res, next) => {
     res.json({ message: error.message });
   }
 };
+
+exports.editApplication = async (req, res, next) => {
+  const { appId } = req.params;
+
+  const {
+    app_permit_create,
+    app_permit_toDoList,
+    app_permit_doing,
+    app_permit_done,
+    app_permit_close,
+  } = req.body;
+
+  try {
+  
+    const leadUser = await checkGroupName(req.user.id, "lead");
+    if (!leadUser) {
+      return res.status(401).json({
+        message: "You do not have access rights to create an application",
+      });
+    } else {
+      const query =
+        "UPDATE assignment.applications SET app_permit_create = ?, app_permit_toDoList = ?, app_permit_doing = ?, app_permit_done = ?, app_permit_close = ? WHERE app_acronym = ? ";
+      await db
+        .promise()
+        .query(query, [
+          JSON.stringify(app_permit_create),
+          JSON.stringify(app_permit_toDoList),
+          JSON.stringify(app_permit_doing),
+          JSON.stringify(app_permit_done),
+          JSON.stringify(app_permit_close),
+          appId,
+        ]);
+      return res
+        .status(200)
+        .json({ message: "Application permissions successfully updated." });
+    }
+  } catch (error) {
+    res.json({ message: error.message });
+  }
+};

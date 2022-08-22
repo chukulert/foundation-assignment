@@ -220,6 +220,7 @@ const Home = () => {
       <Container className="smallFont mb-3 px-4">
         <div className="d-flex justify-content-between">
           <ApplicationContainer applications={applications} />
+          <h3 className="mt-3">{selectedApplication?.app_acronym ? selectedApplication.app_acronym : "All"}</h3>
           <div>
             <InputGroup className="my-3">
               <DropdownButton

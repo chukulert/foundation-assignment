@@ -15,6 +15,10 @@ router
   .get(applicationController.getAllApplications)
   .post(applicationController.createApplication);
 
+router
+.route("/applications/:appId")
+.patch(applicationController.editApplication)
+
 /** Plan routes */
 router.route("/plans").get(planController.getAllPlans);
 
@@ -22,6 +26,10 @@ router
   .route("/:appId/plans")
   .get(planController.getApplicationPlans)
   .post(planController.createPlan);
+
+  // router
+  // .route("/:planId/plans")
+  // .patch()
 
 /** Task routes */
 router.route("/tasks").get(taskController.getAllTasks);

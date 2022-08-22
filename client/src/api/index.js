@@ -44,6 +44,7 @@ export const createGroup = (groupData) => URL.post(`/users/allgroups`, groupData
 //task management
 export const getAllApplications = () => URL.get(`/tasks/applications`, {signal: controller.signal})
 export const createApplication = (applicationData) => URL.post(`/tasks/applications`, applicationData)
+export const editApplication = (appId, applicationData) => URL.patch(`/tasks/applications/${appId}`, applicationData)
 
 //plans
 export const getAllPlans = () => URL.get(`/tasks/plans`, {signal: controller.signal})
