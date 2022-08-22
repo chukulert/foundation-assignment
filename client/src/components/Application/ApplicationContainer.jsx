@@ -34,6 +34,7 @@ const ApplicationContainer = (props) => {
     }),
   ];
 
+
   const setApplication = ({ value }) => {
     if (!value) return setSelectedApplication(null);
 

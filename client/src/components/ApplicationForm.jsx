@@ -10,12 +10,13 @@ import { ToastContext } from "../context/ToastContext";
 
 const ApplicationForm = (props) => {
   const { allGroupsData, modalType, submitNewApplication } = props;
-  const { applications, selectedApplication, plans } =
+  const { applications, selectedApplication, plans, applicationPermissions } =
     useContext(ApplicationContext);
 
-  const {setToastMsg, setShowToast} = useContext(ToastContext)
+  const { setToastMsg, setShowToast } = useContext(ToastContext);
 
   const [optionsArray, setOptionsArray] = useState([]);
+  const [planOptionsArray, setPlanOptionsArray] = useState([]);
   const [acronym, setAcronym] = useState("");
   const [rNumber, setRNumber] = useState(0);
   const [description, setDescription] = useState("");
@@ -42,7 +43,7 @@ const ApplicationForm = (props) => {
         };
       });
 
-      /**Set pre-defined selected options for each task permission */
+      /**Set pre-selected options for each task based on assignment specs */
       allGroupsData.forEach((group) => {
         if (group.name === "manager")
           setPermitToDo([
@@ -52,10 +53,12 @@ const ApplicationForm = (props) => {
             },
           ]);
         if (group.name === "lead") {
-          setPermitCreate([{
-            value: group.id,
-            label: capitalizeFirstLetter(group.name),
-          }]);
+          setPermitCreate([
+            {
+              value: group.id,
+              label: capitalizeFirstLetter(group.name),
+            },
+          ]);
           setPermitClose([
             {
               value: group.id,
@@ -88,48 +91,75 @@ const ApplicationForm = (props) => {
         </option>
       ));
       setOptionsArray(formattedGroupsArray);
-      if (selectedApplication){
-        setApplicationValue(selectedApplication.app_acronym)} else {
-          setApplicationValue(applications[0].app_acronym)
-        }
+      if (selectedApplication) {
+        setApplicationValue(selectedApplication.app_acronym);
+      } else {
+        setApplicationValue(applications[0].app_acronym);
+      }
     }
 
-    if (modalType === "Task" && plans) {
-      const appPlans = plans.filter((plan) => {
-        return plan.plan_app_acronym === selectedApplication.app_acronym;
-      });
+    if (modalType === "Task") {
+      /**Sets app options available based on permissions granted */
+      let arr = [];
+      for (const app of Object.entries(applicationPermissions)) {
+        if (app[1].permit_create) {
+          arr.push(app[0]);
+        }
+      }
 
-      const nullOption = (
-        <option key="empty" value={""}>
-          No Plan Selected
-        </option>
-      );
-      const formattedGroupsArray = appPlans.map((plan) => (
-        <option value={plan.plan_mvp_name} key={plan.plan_mvp_name}>
-          {plan.plan_mvp_name}
+      selectedApplication
+        ? setApplicationValue(selectedApplication.app_acronym)
+        : setApplicationValue(arr[0].app_acronym);
+
+      const formattedAppArray = arr.map((app) => (
+        <option value={app} key={app}>
+          {app}
         </option>
       ));
-      setOptionsArray([nullOption, ...formattedGroupsArray]);
+      setOptionsArray(formattedAppArray);
     }
-    return () => {
-      //   emptyFormFields()
-    };
+
+    return () => {};
   }, [allGroupsData, plans, applications]);
+
+  useEffect(() => {
+    /**Sets plan options based on the currently selected application */
+    const appPlans = plans.filter((plan) => {
+      return plan.plan_app_acronym === applicationValue;
+    });
+
+    const nullOption = (
+      <option key="empty" value={""}>
+        No Plan Selected
+      </option>
+    );
+    const formattedGroupsArray = appPlans.map((plan) => (
+      <option value={plan.plan_mvp_name} key={plan.plan_mvp_name}>
+        {plan.plan_mvp_name}
+      </option>
+    ));
+    setPlanOptionsArray([nullOption, ...formattedGroupsArray]);
+  }, [applicationValue]);
 
   const handleFormSubmit = (e) => {
     e.preventDefault();
     let data;
-    
 
     if (modalType === "Application") {
-      if(!permitClose.length || !permitCreate.length || !permitToDo.length || !permitDoing.length || !permitDone.length) {
-        setToastMsg("All fields for permission settings must be filled.")
-        setShowToast(true)
+      if (
+        !permitClose.length ||
+        !permitCreate.length ||
+        !permitToDo.length ||
+        !permitDoing.length ||
+        !permitDone.length
+      ) {
+        setToastMsg("All fields for permission settings must be filled.");
+        setShowToast(true);
         return;
       }
 
       data = {
-      app_acronym: acronym,
+        app_acronym: acronym,
         app_description: description,
         app_Rnumber: rNumber,
         app_startDate: startDate,
@@ -154,6 +184,7 @@ const ApplicationForm = (props) => {
 
     if (modalType === "Task")
       data = {
+        task_app_acronym: applicationValue,
         task_name: acronym,
         task_description: description,
         task_plan: plan,
@@ -161,6 +192,8 @@ const ApplicationForm = (props) => {
 
     submitNewApplication(data);
   };
+  console.log(optionsArray)
+  console.log(planOptionsArray)
 
   return (
     <Form onSubmit={handleFormSubmit} className="p-3">
@@ -235,20 +268,22 @@ const ApplicationForm = (props) => {
         </>
       )}
 
+      {(modalType === "Task" || modalType === 'Plan') && (
+        <Form.Group className="mb-3">
+          <Form.Label htmlFor="application">Select Application:</Form.Label>
+          <Form.Select
+            id="application"
+            aria-label="Application"
+            value={applicationValue}
+            onChange={(e) => setApplicationValue(e.target.value)}
+          >
+            {optionsArray}
+          </Form.Select>
+        </Form.Group>
+      )}
+
       {modalType === "Plan" && (
         <>
-          <Form.Group className="mb-3">
-            <Form.Label htmlFor="application">Select Application:</Form.Label>
-            <Form.Select
-              id="application"
-              aria-label="Application"
-              value={applicationValue}
-              onChange={(e) => setApplicationValue(e.target.value)}
-            >
-              {optionsArray}
-            </Form.Select>
-          </Form.Group>
-
           <Form.Label htmlFor="groupColor">Group category color</Form.Label>
           <Form.Control
             type="color"
@@ -269,9 +304,8 @@ const ApplicationForm = (props) => {
               aria-label="Plan"
               value={plan}
               onChange={(e) => setPlan(e.target.value)}
-              
             >
-              {optionsArray}
+              {planOptionsArray}
             </Form.Select>
           </Form.Group>
         </>
@@ -316,9 +350,7 @@ const ApplicationForm = (props) => {
             required
           />
 
-          <Form.Label className="mt-3">
-            Update task state to "Done":
-          </Form.Label>
+          <Form.Label className="mt-3">Update task state to "Done":</Form.Label>
           <Select
             options={optionsArray}
             closeMenuOnSelect={false}

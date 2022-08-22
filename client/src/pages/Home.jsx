@@ -8,7 +8,6 @@ import TaskModalDetails from "../components/Task/TaskModalDetails";
 import { ApplicationContext } from "../context/ApplicationContext";
 import { useContext } from "react";
 import ApplicationForm from "../components/ApplicationForm";
-import Button from "react-bootstrap/Button";
 import { ToastContext } from "../context/ToastContext";
 import Dropdown from "react-bootstrap/Dropdown";
 import DropdownButton from "react-bootstrap/DropdownButton";
@@ -16,7 +15,6 @@ import InputGroup from "react-bootstrap/InputGroup";
 import "../index.css";
 import { AuthContext } from "../context/AuthContext";
 import Sidebar from "../components/SideBar/SideBar";
-import ApplicationModalDetails from "../components/Application/ApplicationModalDetails";
 
 const Home = () => {
   const [showModal, setShowModal] = useState(false);
@@ -42,6 +40,7 @@ const Home = () => {
     plans,
     tasks,
     applications,
+    applicationPermissions,
   } = useContext(ApplicationContext);
   const { setShowToast, setToastMsg } = useContext(ToastContext);
   const { user } = useContext(AuthContext);
@@ -85,10 +84,17 @@ const Home = () => {
         if (group.name === "manager") setIsManager(true);
         if (group.name === "lead") setIsLead(true);
       });
-      if (user.groupIDs.includes(selectedApplication?.app_permit_create))
-        setIsTaskCreator(true);
     }
-  }, [user, selectedApplication]);
+
+    if (applicationPermissions) {
+      for (const app of Object.entries(applicationPermissions)) {
+        if (app[1].permit_create) {
+          setIsTaskCreator(true);
+          break;
+        }
+      }
+    }
+  }, [user, applicationPermissions]);
 
   const fetchApplications = async () => {
     const { data } = await api.getAllApplications();
@@ -141,7 +147,7 @@ const Home = () => {
       }
 
       if (modalType === "Task") {
-        await api.createTask(selectedApplication.app_acronym, formData);
+        await api.createTask(formData.task_app_acronym, formData);
         await fetchAllTasks();
         setToastMsg(`New Task ${formData.task_name} is created successfully.`);
       }
@@ -220,7 +226,11 @@ const Home = () => {
       <Container className="smallFont mb-3 px-4">
         <div className="d-flex justify-content-between">
           <ApplicationContainer applications={applications} />
-          <h3 className="mt-3">{selectedApplication?.app_acronym ? selectedApplication.app_acronym : "All"}</h3>
+          <h3 className="mt-3">
+            {selectedApplication?.app_acronym
+              ? selectedApplication.app_acronym
+              : "All"}
+          </h3>
           <div>
             <InputGroup className="my-3">
               <DropdownButton
@@ -240,7 +250,7 @@ const Home = () => {
                     Add Plan
                   </Dropdown.Item>
                 )}
-                {selectedApplication && (
+                {isTaskCreator && (
                   <Dropdown.Item onClick={() => handleShowFormModal("Task")}>
                     Add Task
                   </Dropdown.Item>

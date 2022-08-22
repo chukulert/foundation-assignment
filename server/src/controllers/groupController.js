@@ -13,7 +13,7 @@ exports.getAllGroups = async (req, res, next) => {
     const results = queryUsers[0];
     res.status(200).json(results);
   } catch (error) {
-    res.status(400).json({ message: error.message });
+    res.status(500).json({ message: error.message });
   }
 };
 
@@ -27,7 +27,7 @@ exports.createGroup = async (req, res) => {
     /** check for existing group name */
     const existingGroup = await findGroup(name);
     if (existingGroup) {
-      return res.status(401).json({ message: "Group name already exists." });
+      return res.status(400).json({ message: "Group name already exists." });
     } else {
       /** If group name is available */
       const query = "INSERT INTO assignment.groups (name) VALUES (?);";

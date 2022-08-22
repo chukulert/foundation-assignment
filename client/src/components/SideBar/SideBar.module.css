@@ -6,10 +6,6 @@
   padding: 0;
 }
 
-.container li {
-  /* list-style-type: none; */
-}
-
 .listItem {
   cursor: pointer;
 }
