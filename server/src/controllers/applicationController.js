@@ -49,7 +49,7 @@ exports.createApplication = async (req, res, next) => {
         message: "You do not have access rights to create an application",
       });
     } else if (existingApplication) {
-      return res.status(401).json({ message: "App acronym already exists." });
+      return res.status(400).json({ message: "App acronym already exists." });
     } else {
       /** If application acronym is acceptable */
       const query =

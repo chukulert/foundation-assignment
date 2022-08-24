@@ -58,7 +58,7 @@ exports.getUserById = async (req, res) => {
 exports.createUser = async (req, res) => {
   const { username, password, email, groups } = req.body;
 
-  if (!username || !password) {
+  if (!username.trim() || !password) {
     return res
       .status(400)
       .json({ message: "A username and password is required." });

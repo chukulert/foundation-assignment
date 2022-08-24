@@ -35,7 +35,7 @@ exports.getAllTasks = async (req, res) => {
     const results = queryTasks[0];
     return res.status(200).json(results);
   } catch (error) {
-    return res.status(400).json({ message: error.message });
+    return res.status(500).json({ message: error.message });
   }
 };
 
@@ -63,7 +63,6 @@ exports.createTask = async (req, res, next) => {
       req.user.id,
       application.app_permit_create
     );
-
 
     if (!permittedUser) {
       return res.status(401).json({
@@ -131,9 +130,8 @@ exports.editTask = async (req, res) => {
   const { taskId } = req.params;
   const { notes, task_plan } = req.body;
 
-
   if (!notes && task_plan === undefined)
-    return res.status(500).json({ message: "There is no data sent." });
+    return res.status(400).json({ message: "There is no data sent." });
 
   try {
     const task = await getTask(taskId);
@@ -145,10 +143,13 @@ exports.editTask = async (req, res) => {
 
     const state = task.task_state;
 
-    if (task_plan || task_plan === "") {
-      const permittedUser = await checkGroupName(req.user.id, "manager");
+    let permitted = false;
 
-      if (!permittedUser) {
+    //check if permitted to carry out update task plan action
+    if (task_plan || task_plan === "") {
+      permitted = await checkGroupName(req.user.id, "manager");
+
+      if (!permitted) {
         return res.status(401).json({
           message: "You do not have permission to perform this action.",
         });
@@ -166,6 +167,13 @@ exports.editTask = async (req, res) => {
       await db.promise().query(query, [taskNotes, task_plan, taskId]);
       res.status(200).json({ message: "Task plan successfully updated." });
     } else {
+      //check if permitted to carry out add task note action
+      permitted = await permitEditUser(task.task_state, req.user.id);
+      if (!permitted) {
+        return res.status(401).json({
+          message: "You do not have permission to perform this action.",
+        });
+      }
       const taskNotes = addTaskNotes(req.user.id, task, state, notes);
       const query =
         "UPDATE assignment.tasks SET task_notes = ? WHERE task_id = ?";
@@ -175,6 +183,19 @@ exports.editTask = async (req, res) => {
   } catch (error) {
     res.json({ message: error.message });
   }
+};
+
+const permitEditUser = async (taskState, userId) => {
+  if (taskState === "open") {
+    return await checkGroupId(userId, application.app_permit_create);
+  } else if (taskState === "toDoList") {
+    return await checkGroupId(userId, application.app_permit_toDoList);
+  } else if (taskState === "doing") {
+    return await checkGroupId(userId, application.app_permit_doing);
+  } else if (taskState === "done") {
+    return await checkGroupId(userId, application.app_permit_done);
+  }
+  return false;
 };
 
 const permittedUser = async (state, currentState, application, userId) => {
@@ -201,7 +222,7 @@ exports.sendEmailNotification = async (req, res) => {
     const task = await getTask(taskId);
     if (!task || task.task_state !== "done")
       return res
-        .status(500)
+        .status(400)
         .json({ message: "Task does not exist / is not completed" });
 
     const leadUsers = await userController.getLeadUsers();

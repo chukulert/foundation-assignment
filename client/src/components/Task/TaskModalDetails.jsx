@@ -30,6 +30,7 @@ const TaskModalDetails = (props) => {
     /**This ocnfigures the options allowed to promote/demote a task on the modal */
     if (application && selectedTask) {
       const taskOptions = checkTaskOptions(application, selectedTask);
+      console.log(taskOptions)
       if (taskOptions.promote) setPromote(taskOptions.promote);
       if (taskOptions.demote) setDemote(taskOptions.demote);
       setApplication(application);
@@ -162,7 +163,7 @@ const TaskModalDetails = (props) => {
         </p>
       </div>
 
-      <Form onSubmit={handleFormSubmit} className="p-3">
+      {(promote || demote) && <Form onSubmit={handleFormSubmit} className="p-3">
         <Form.Group className="mb-3 border-bottom">
           <Form.Label htmlFor="notes">
             <strong>New Task Note</strong>
@@ -182,7 +183,8 @@ const TaskModalDetails = (props) => {
             Submit
           </Button>
         </div>
-      </Form>
+      </Form>}
+      
       <TaskNotes />
     </Container>
   );

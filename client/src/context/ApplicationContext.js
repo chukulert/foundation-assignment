@@ -16,6 +16,7 @@ const ApplicationProvider = (props) => {
 
   useEffect(() => {
     if (user && applications) {
+ 
       const result = applications.reduce((map, app) => {
         map[app.app_acronym] = {
           permit_create: checkGroup(
@@ -75,6 +76,8 @@ const ApplicationProvider = (props) => {
     }
     return result;
   };
+
+  console.log(applicationPermissions)
 
   return (
     <ApplicationContext.Provider

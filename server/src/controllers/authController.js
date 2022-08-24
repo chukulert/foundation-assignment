@@ -13,7 +13,7 @@ const signToken = (username) => {
 
 const createSendToken = (user, statusCode, req, res) => {
   const token = signToken(user.username);
-
+  
   //name, value, options for expiry time. httpOnly so not accessible from client
   res.cookie("jwt", token, {
     expires: new Date(
