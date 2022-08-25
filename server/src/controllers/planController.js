@@ -1,5 +1,6 @@
 const db = require("../config/database");
 const { checkGroupName } = require("../utils/helpers");
+const { findApplication } = require("./applicationController");
 
 const findPlan = async (planId) => {
   const query = `SELECT * FROM assignment.plans WHERE plan_mvp_name = ?`;
@@ -33,16 +34,23 @@ exports.getApplicationPlans = async (req, res) => {
 exports.createPlan = async (req, res) => {
   const { plan_mvp_name, plan_startDate, plan_endDate, plan_app_acronym, plan_color, plan_description } = req.body;
 
-  if (plan_startDate > plan_endDate) {
+  if (new Date(plan_startDate) > new Date(plan_endDate)) {
     return res
       .status(400)
       .json({ message: "Starting Date cannot be later than End Date" });
   }
+  if (new Date(plan_startDate) < new Date(Date.now())) {
+    return res
+      .status(400)
+      .json({ message: "Starting Date cannot be earlier than today." });
+  }
 
   try {
+    const existingApplication = await findApplication(plan_app_acronym);
     /** check for existing application */
     const existingPlan = await findPlan(plan_mvp_name);
     const allowedUser = await checkGroupName(req.user.id, "manager");
+    // const [existingApplication, existingPlan, allowedUser] = Promise.all()
 
     if (!allowedUser) {
       return res.status(401).json({
@@ -50,7 +58,12 @@ exports.createPlan = async (req, res) => {
       });
     } else if (existingPlan) {
       return res.status(401).json({ message: "Plan name already exists." });
-    } else {
+    } else if((new Date(plan_startDate) < new Date(existingApplication.app_startDate)) || (new Date(plan_endDate) > new Date(existingApplication.app_endDate)) ) {
+      return res.status(400).json({
+        message: `Plan start and end dates have to be within start and end dates of Application "${plan_app_acronym}"`,
+      });
+    }
+    else {
       /** If application acronym is acceptable */
       const query =
         "INSERT INTO assignment.plans (plan_mvp_name, plan_startDate, plan_endDate, plan_app_acronym, plan_color, plan_description) VALUES (?, ?, ?, ?, ?, ?); ";

@@ -3,8 +3,6 @@ import { useState } from "react";
 import { useContext } from "react";
 import { ApplicationContext } from "../../context/ApplicationContext";
 import styles from "./SideBar.module.css";
-import Badge from "react-bootstrap/Badge";
-import { capitalizeFirstLetter } from "../../utils/helpers";
 import AppDropList from "./AppDropList";
 import AppModal from "../AppModal";
 import ApplicationModalDetails from "../Application/ApplicationModalDetails";
@@ -88,7 +86,9 @@ const SideBar = (props) => {
   const handlePlanClick = (e) => {
     setModalDisplayedApplication(null);
     const plan = plans.find((plan) => plan.plan_mvp_name === e.target.id);
+    const application = applications.find(app => app.app_acronym === plan.plan_app_acronym)
     setModalDisplayedPlan(plan);
+    setModalDisplayedApplication(application);
     handleShowApplicationModal("Plan");
   };
 
@@ -118,6 +118,7 @@ const SideBar = (props) => {
           application={modalDisplayedApplication}
           setModalDisplayedApplication={setModalDisplayedApplication}
           plan={modalDisplayedPlan}
+          modalType={modalType}
         />
       </AppModal>
     </>

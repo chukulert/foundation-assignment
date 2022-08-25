@@ -15,6 +15,38 @@ const getTask = async (taskId) => {
   return results;
 };
 
+
+const permitEditUser = async (taskState, userId, application) => {
+  if (taskState === "open") {
+    return await checkGroupId(userId, application.app_permit_toDoList);
+  } else if (taskState === "toDoList") {
+    return await checkGroupId(userId, application.app_permit_doing);
+  } else if (taskState === "doing") {
+    return await checkGroupId(userId, application.app_permit_done);
+  } else if (taskState === "done") {
+    return await checkGroupId(userId, application.app_permit_close);
+  }
+  return false;
+};
+
+const permittedUser = async (state, currentState, application, userId) => {
+  if (state === "toDoList" && currentState === "open") {
+    return await checkGroupId(userId, application.app_permit_toDoList);
+  } else if (state === "doing" && currentState === "toDoList") {
+    return await checkGroupId(userId, application.app_permit_doing);
+  } else if (state === "toDoList" && currentState === "doing") {
+    return await checkGroupId(userId, application.app_permit_doing);
+  } else if (state === "done" && currentState === "doing") {
+    return await checkGroupId(userId, application.app_permit_done);
+  } else if (state === "close" && currentState === "done") {
+    return await checkGroupId(userId, application.app_permit_close);
+  } else if (state === "doing" && currentState === "done") {
+    return await checkGroupId(userId, application.app_permit_close);
+  }
+  return false;
+};
+
+
 exports.findTask = async (req, res) => {
   const { taskId } = req.params;
 
@@ -127,7 +159,7 @@ const addTaskNotes = (userId, task, state, notes) => {
 };
 
 exports.editTask = async (req, res) => {
-  const { taskId } = req.params;
+  const { taskId, appId } = req.params;
   const { notes, task_plan } = req.body;
 
   if (!notes && task_plan === undefined)
@@ -140,6 +172,8 @@ exports.editTask = async (req, res) => {
         .status(401)
         .json({ message: "There is no task available in this application." });
     }
+    const application = await findApplication(appId);
+   
 
     const state = task.task_state;
 
@@ -168,7 +202,10 @@ exports.editTask = async (req, res) => {
       res.status(200).json({ message: "Task plan successfully updated." });
     } else {
       //check if permitted to carry out add task note action
-      permitted = await permitEditUser(task.task_state, req.user.id);
+
+
+      permitted = await permitEditUser(task.task_state, req.user.id, application);
+
       if (!permitted) {
         return res.status(401).json({
           message: "You do not have permission to perform this action.",
@@ -185,35 +222,6 @@ exports.editTask = async (req, res) => {
   }
 };
 
-const permitEditUser = async (taskState, userId) => {
-  if (taskState === "open") {
-    return await checkGroupId(userId, application.app_permit_create);
-  } else if (taskState === "toDoList") {
-    return await checkGroupId(userId, application.app_permit_toDoList);
-  } else if (taskState === "doing") {
-    return await checkGroupId(userId, application.app_permit_doing);
-  } else if (taskState === "done") {
-    return await checkGroupId(userId, application.app_permit_done);
-  }
-  return false;
-};
-
-const permittedUser = async (state, currentState, application, userId) => {
-  if (state === "toDoList" && currentState === "open") {
-    return await checkGroupId(userId, application.app_permit_toDoList);
-  } else if (state === "doing" && currentState === "toDoList") {
-    return await checkGroupId(userId, application.app_permit_doing);
-  } else if (state === "toDoList" && currentState === "doing") {
-    return await checkGroupId(userId, application.app_permit_doing);
-  } else if (state === "done" && currentState === "doing") {
-    return await checkGroupId(userId, application.app_permit_done);
-  } else if (state === "close" && currentState === "done") {
-    return await checkGroupId(userId, application.app_permit_close);
-  } else if (state === "doing" && currentState === "done") {
-    return await checkGroupId(userId, application.app_permit_close);
-  }
-  return false;
-};
 
 exports.sendEmailNotification = async (req, res) => {
   const { taskId } = req.params;

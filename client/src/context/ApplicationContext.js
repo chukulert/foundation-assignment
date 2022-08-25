@@ -77,8 +77,6 @@ const ApplicationProvider = (props) => {
     return result;
   };
 
-  console.log(applicationPermissions)
-
   return (
     <ApplicationContext.Provider
       value={{

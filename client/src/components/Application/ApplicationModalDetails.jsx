@@ -4,16 +4,21 @@ import { formatDateString } from "../../utils/helpers";
 import Button from "react-bootstrap/Button";
 import ApplicationEditForm from "./ApplicationEditForm";
 import { capitalizeFirstLetter } from "../../utils/helpers";
+import { useContext } from "react";
+import { AuthContext } from "../../context/AuthContext";
 
 const ApplicationModalDetails = (props) => {
-  const { application, plan, allGroupsData, setModalDisplayedApplication } = props;
+  const { application, plan, allGroupsData, setModalDisplayedApplication, modalType } = props;
   const [showEditForm, setShowEditForm] = useState(false);
   const [permitCreate, setPermitCreate] = useState("");
   const [permitToDo, setPermitToDo] = useState("");
   const [permitDoing, setPermitDoing] = useState("");
   const [permitDone, setPermitDone] = useState("");
   const [permitClose, setPermitClose] = useState("");
+  const [lead, setLead] = useState(false)
 
+  const {user} = useContext(AuthContext);
+  
   useEffect(() => {
     const appPermitCreate = compareGroups(
       allGroupsData,
@@ -35,12 +40,18 @@ const ApplicationModalDetails = (props) => {
       allGroupsData,
       JSON.parse(application.app_permit_close)
     );
+
+    if(user) {
+      user.groups.forEach((group) => {
+      if(group.name === 'lead') setLead(true)
+    }
+      )}
     setPermitCreate(appPermitCreate);
     setPermitToDo(appPermitToDo);
     setPermitDoing(appPermitDoing);
     setPermitDone(appPermitDone);
     setPermitClose(appPermitClose);
-  }, [allGroupsData, application]);
+  }, [allGroupsData, application, user]);
 
   const compareGroups = (allGroupsData, appPermission) => {
     const arr1 = [...allGroupsData];
@@ -62,7 +73,7 @@ const ApplicationModalDetails = (props) => {
 
   return (
     <Container className="smallFont">
-      {application && (
+      {(application && modalType === 'Application') && (
         <div className="mt-3">
           <p>
             <strong>Application: </strong>
@@ -118,7 +129,7 @@ const ApplicationModalDetails = (props) => {
           )}
         </div>
       )}
-      {plan && (
+      {(plan && modalType === 'Plan') && (
         <div className="mt-3 border-bottom">
           <p>
             <strong>Plan: </strong>
@@ -149,7 +160,7 @@ const ApplicationModalDetails = (props) => {
           </p>
         </div>
       )}
-      {showEditForm && (
+      {(showEditForm && lead && modalType === 'Application') && (
         <ApplicationEditForm
           allGroupsData={allGroupsData}
           application={application}
@@ -161,7 +172,7 @@ const ApplicationModalDetails = (props) => {
           setModalDisplayedApplication={setModalDisplayedApplication}
         />
       )}
-      {!showEditForm && (
+      {(!showEditForm && lead && modalType === 'Application') && (
         <Button
           variant="primary"
           size="sm"

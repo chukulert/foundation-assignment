@@ -52,7 +52,7 @@ const ApplicationForm = (props) => {
               label: capitalizeFirstLetter(group.name),
             },
           ]);
-        if (group.name === "lead") {
+        if (group.name === "Project_Lead") {
           setPermitCreate([
             {
               value: group.id,
@@ -192,8 +192,6 @@ const ApplicationForm = (props) => {
 
     submitNewApplication(data);
   };
-  console.log(optionsArray)
-  console.log(planOptionsArray)
 
   return (
     <Form onSubmit={handleFormSubmit} className="p-3">

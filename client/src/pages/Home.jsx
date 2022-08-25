@@ -192,8 +192,9 @@ const Home = () => {
   };
 
   const editTaskDetails = async (task, data) => {
+
     try {
-      await api.editTask(task.app_acronym, task.task_id, data);
+      await api.editTask(task.task_app_acronym, task.task_id, data);
       setToastMsg(
         `${
           data.notes
@@ -231,6 +232,7 @@ const Home = () => {
               ? selectedApplication.app_acronym
               : "All"}
           </h3>
+          {(isLead || isManager || isTaskCreator) ?  
           <div>
             <InputGroup className="my-3">
               <DropdownButton
@@ -257,7 +259,7 @@ const Home = () => {
                 )}
               </DropdownButton>
             </InputGroup>
-          </div>
+          </div> : <div></div>}
         </div>
         <TaskContainer
           tasks={displayedTasks}

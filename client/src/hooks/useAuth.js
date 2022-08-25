@@ -10,7 +10,6 @@ const useAuth = () => {
     if (!userData) return;
 
     const decodedToken = decode(userData.token);
-
     if (decodedToken.exp * 1000 < new Date().getTime()) {
       localStorage.clear();
       return;

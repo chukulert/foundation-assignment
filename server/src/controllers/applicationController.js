@@ -34,10 +34,16 @@ exports.createApplication = async (req, res, next) => {
     app_permit_close,
   } = req.body;
 
-  if (app_startDate > app_endDate) {
+  if (new Date(app_startDate) > new Date(app_endDate)) {
     return res
       .status(400)
       .json({ message: "Starting Date cannot be later than End Date" });
+  }
+
+  if (new Date(app_startDate) < new Date(Date.now())) {
+    return res
+      .status(400)
+      .json({ message: "Starting Date cannot be earlier than today." });
   }
 
   try {
