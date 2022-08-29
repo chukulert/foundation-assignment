@@ -34,6 +34,9 @@ router
 /** Task routes */
 router.route("/tasks").get(taskController.getAllTasks);
 router.route("/tasks/:taskId").get(taskController.findTask)
+router.route("/:taskId/promoteToDone").patch(taskController.promoteTaskToDone)
+
+router.route("/getTasks").get(taskController.getTaskByState)
 
 router
   .route("/:appId")

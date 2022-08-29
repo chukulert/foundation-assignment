@@ -85,11 +85,13 @@ exports.getAllApplicationTasks = async (req, res) => {
 
 exports.createTask = async (req, res, next) => {
   const appAcronym = req.params.appId;
+  console.log(appAcronym)
   const { task_name, task_description, task_plan } = req.body;
 
   try {
     /** check for existing application */
     const application = await findApplication(appAcronym);
+    console.log(application)
 
     const permittedUser = await checkGroupId(
       req.user.id,
@@ -141,7 +143,7 @@ exports.createTask = async (req, res, next) => {
     await Promise.all([newTask, updateApp]);
     return res.status(200).json({ message: "Task successfully created" });
   } catch (error) {
-    res.json({ message: error.message });
+    res.status(500).json({ message: error.message });
   }
 };
 
@@ -250,6 +252,7 @@ exports.sendEmailNotification = async (req, res) => {
     );
     res.status(200).json({ messsage: "Emails successfully sent." });
   } catch (error) {
+    console.log(error)
     res.status(500).json({ message: error.message });
   }
 };
@@ -303,3 +306,59 @@ exports.updateTaskState = async (req, res) => {
     res.json({ message: error.message });
   }
 };
+
+exports.getTaskByState = async (req, res) => {
+  try {
+    const query = `SELECT * FROM assignment.tasks WHERE task_state = ?`;
+    const queryTasks = await db.promise().query(query, [req.query.state]);
+    const results = queryTasks[0];
+    res.status(200).json(results)
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+}
+
+exports.promoteTaskToDone = async (req, res) => {
+  const taskId = req.params.taskId
+
+  try {
+    const task = await getTask(req.params.taskId)
+    if(!task) {
+      return res.status(400).json({message: "Task ID does not exist."})
+    }
+
+    if(task.task_state !== "doing") {
+      return res.status(400).json({message: "Task's current state is not doing"})
+    }
+
+    const application = await findApplication(task.task_app_acronym)
+    
+    const permitted = await permittedUser("doing", "done", application, req.user.id)
+
+    if(!permitted) {
+      return res.status(401).json({
+        message: "You are not permitted to perform this action.",
+      });
+    } else {
+      const newTaskNote = addTaskNotes(
+        req.user.id,
+        task,
+        "done",
+        `Task status changed to "done". <system generated>`
+      );
+
+        const query =
+          "UPDATE assignment.tasks SET task_state = ?, task_owner = ?, task_notes = ? WHERE task_id = ?";
+        await db
+          .promise()
+          .query(query, ["done", req.user.id, newTaskNote, taskId]);
+  
+        return res
+          .status(200)
+          .json({ message: "Task state successfully updated" });
+      }
+
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+}

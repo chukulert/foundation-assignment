@@ -16,7 +16,7 @@ exports.getAllApplications = async (req, res, next) => {
     const results = queryApplications[0];
     return res.status(200).json(results);
   } catch (error) {
-    return res.status(400).json({ message: error.message });
+    return res.status(500).json({ message: error.message });
   }
 };
 
@@ -96,11 +96,10 @@ exports.editApplication = async (req, res, next) => {
   } = req.body;
 
   try {
-  
     const leadUser = await checkGroupName(req.user.id, "lead");
     if (!leadUser) {
       return res.status(401).json({
-        message: "You do not have access rights to create an application",
+        message: "You do not have access rights to edit an application",
       });
     } else {
       const query =

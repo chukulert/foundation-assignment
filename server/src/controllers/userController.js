@@ -33,7 +33,7 @@ exports.getAllUsers = async (req, res) => {
     const data = mergeResults(userResults, groupResults);
     res.status(200).json(data);
   } catch (error) {
-    res.json({ message: error.message });
+    res.status(500).json({ message: error.message });
   }
 };
 
@@ -97,7 +97,7 @@ exports.createUser = async (req, res) => {
       return res.status(200).json({ message: "User successfully created" });
     }
   } catch (error) {
-    res.json({ message: error.message });
+    res.status(500).json({ message: error.message });
   }
 };
 
@@ -115,7 +115,7 @@ exports.getMe = async (req, res) => {
       return res.status(500).json({ message: "User profile not found." });
     }
   } catch (error) {
-    res.json({ message: error.message });
+    res.status(500).json({ message: error.message });
   }
 };
 
@@ -144,7 +144,7 @@ exports.updateMe = async (req, res) => {
 
     res.status(200).json({ message: "Your profile has been updated." });
   } catch (error) {
-    res.status(400).json({ message: error.message });
+    res.status(500).json({ message: error.message });
   }
 };
 
@@ -205,7 +205,7 @@ exports.updateUserPassword = async (req, res) => {
     await db.promise().query(query, [hashedPassword, username]);
     res.status(200).json({ message: "success" });
   } catch (error) {
-    res.status(400).json({ message: error.message });
+    res.status(500).json({ message: error.message });
   }
 };
 

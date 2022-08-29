@@ -103,13 +103,14 @@ const ApplicationForm = (props) => {
       let arr = [];
       for (const app of Object.entries(applicationPermissions)) {
         if (app[1].permit_create) {
+          console.log(app);
           arr.push(app[0]);
         }
       }
 
       selectedApplication
         ? setApplicationValue(selectedApplication.app_acronym)
-        : setApplicationValue(arr[0].app_acronym);
+        : setApplicationValue(arr[0]);
 
       const formattedAppArray = arr.map((app) => (
         <option value={app} key={app}>
@@ -141,7 +142,24 @@ const ApplicationForm = (props) => {
     setPlanOptionsArray([nullOption, ...formattedGroupsArray]);
   }, [applicationValue]);
 
+  const emptyFormFields = () => {
+    console.log('hi')
+    setAcronym("");
+    setRNumber(0);
+    setDescription("");
+    setStartDate("");
+    setEndDate("");
+    setPermitCreate([]);
+    setPermitToDo([]);
+    setPermitDoing([]);
+    setPermitDone([]);
+    setPermitClose([]);
+    setColor(null);
+    setPlan("");
+  };
+
   const handleFormSubmit = (e) => {
+    console.log(e)
     e.preventDefault();
     let data;
 
@@ -189,8 +207,8 @@ const ApplicationForm = (props) => {
         task_description: description,
         task_plan: plan,
       };
-
-    submitNewApplication(data);
+      emptyFormFields();
+      submitNewApplication(data);
   };
 
   return (
@@ -230,6 +248,7 @@ const ApplicationForm = (props) => {
             <Form.Control
               id="rNumber"
               type="number"
+              step={1}
               value={rNumber}
               onChange={(e) => setRNumber(e.target.value)}
               required
@@ -266,7 +285,7 @@ const ApplicationForm = (props) => {
         </>
       )}
 
-      {(modalType === "Task" || modalType === 'Plan') && (
+      {(modalType === "Task" || modalType === "Plan") && (
         <Form.Group className="mb-3">
           <Form.Label htmlFor="application">Select Application:</Form.Label>
           <Form.Select

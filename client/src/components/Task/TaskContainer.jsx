@@ -1,7 +1,6 @@
 import Col from "react-bootstrap/Col";
 import Row from "react-bootstrap/Row";
 import TaskItem from "./TaskItem";
-import Button from "react-bootstrap/Button";
 import { useState, useEffect } from "react";
 import { useContext } from "react";
 import { ApplicationContext } from "../../context/ApplicationContext";
@@ -107,7 +106,7 @@ const TaskContainer = (props) => {
         {doneTasksList}
       </Col>
       <Col>
-        <h5>Completed</h5>
+        <h5>Closed</h5>
         {completedTasksList}
       </Col>
     </Row>

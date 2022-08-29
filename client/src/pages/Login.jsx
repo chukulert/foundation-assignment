@@ -2,31 +2,32 @@ import Container from "react-bootstrap/Container";
 import Button from "react-bootstrap/Button";
 import Form from "react-bootstrap/Form";
 import FloatingLabel from "react-bootstrap/FloatingLabel";
-import { useState, useRef, useContext } from "react";
+import { useRef, useContext } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { AuthContext } from "../context/AuthContext";
+import { ToastContext } from "../context/ToastContext";
 
 const Login = () => {
-  const [error, setError] = useState(null);
   const usernameRef = useRef();
   const passwordRef = useRef();
   let navigate = useNavigate();
   const { logIn } = useContext(AuthContext);
   const { state } = useLocation();
+  const {setToastMsg, setShowToast} = useContext(ToastContext)
 
   const handleLoginSubmit = async (e) => {
     e.preventDefault();
 
     try {
-      await logIn({
+      const user = await logIn({
         username: usernameRef.current.value,
         password: passwordRef.current.value,
       })
-        navigate(state?.path || "/");
-    
+        if(user) navigate(state?.path || "/");
+        // setToastMessage("You are successfully logged in.")
     } catch (error) {
-  
-      setError(error.response.data.message);
+      setToastMsg(error.response.data.message);
+      setShowToast(true)
     }
   };
 
@@ -65,7 +66,7 @@ const Login = () => {
             </FloatingLabel>
           </Form.Group>
           <div className="text-danger ml-3">
-          {error}
+          {/* {error} */}
           </div>
           <Button variant="primary" type="submit">
             Submit

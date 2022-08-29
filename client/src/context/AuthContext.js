@@ -20,6 +20,9 @@ const AuthProvider = (props) => {
 
   const logIn = async (userData) => {
     const { data: {user} } = await api.login(userData)
+    console.log(user)
+
+    if(!user) return false;
 
     if (user.token) {
       localStorage.setItem('userData', JSON.stringify(user))
@@ -29,7 +32,7 @@ const AuthProvider = (props) => {
     if (user.isActive !== '1') {
       localStorage.clear()
       setUser(null)
-      alert('Account is blocked')
+      alert('Something went wrong.')
     }
     return user;
   }

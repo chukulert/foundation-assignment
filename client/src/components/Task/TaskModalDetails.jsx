@@ -87,7 +87,7 @@ const TaskModalDetails = (props) => {
 
   return (
     <Container className="smallFont">
-      {selectedTask.task_state !== "close" && (
+      {selectedTask.task_state !== "close" && (promote || demote || isManager) && (
         <div className="d-flex justify-content-between py-3 border-bottom">
           <OverlayTrigger
             overlay={
@@ -162,28 +162,30 @@ const TaskModalDetails = (props) => {
         </p>
       </div>
 
-      {(promote || demote) && <Form onSubmit={handleFormSubmit} className="p-3">
-        <Form.Group className="mb-3 border-bottom">
-          <Form.Label htmlFor="notes">
-            <strong>New Task Note</strong>
-          </Form.Label>
-          <Form.Control
-            id="notes"
-            as="textarea"
-            rows={3}
-            placeholder="Enter new task note"
-            value={inputNotes}
-            onChange={(e) => setInputNotes(e.target.value)}
-          />
-        </Form.Group>
+      {(promote || demote) && (
+        <Form onSubmit={handleFormSubmit} className="p-3">
+          <Form.Group className="mb-3 border-bottom">
+            <Form.Label htmlFor="notes">
+              <strong>New Task Note</strong>
+            </Form.Label>
+            <Form.Control
+              id="notes"
+              as="textarea"
+              rows={3}
+              placeholder="Enter new task note"
+              value={inputNotes}
+              onChange={(e) => setInputNotes(e.target.value)}
+            />
+          </Form.Group>
 
-        <div className="d-flex justify-content-end">
-          <Button variant="primary" type="submit" size="sm">
-            Submit
-          </Button>
-        </div>
-      </Form>}
-      
+          <div className="d-flex justify-content-end">
+            <Button variant="primary" type="submit" size="sm">
+              Submit
+            </Button>
+          </div>
+        </Form>
+      )}
+
       <TaskNotes />
     </Container>
   );

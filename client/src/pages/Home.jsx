@@ -147,6 +147,7 @@ const Home = () => {
       }
 
       if (modalType === "Task") {
+        console.log(formData)
         await api.createTask(formData.task_app_acronym, formData);
         await fetchAllTasks();
         setToastMsg(`New Task ${formData.task_name} is created successfully.`);
@@ -270,7 +271,9 @@ const Home = () => {
 
       <AppModal
         showModal={showModal}
-        title={`${selectedTask?.task_name} (${selectedTask?.task_state})`}
+        title={`${selectedTask?.task_name} (${selectedTask?.task_state === "toDoList"
+        ? "To-Do"
+        : (selectedTask?.task_state)})`}
         handleShowModal={handleShowModal}
       >
         <TaskModalDetails

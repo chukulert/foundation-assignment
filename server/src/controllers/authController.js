@@ -41,9 +41,17 @@ const findUserGroups = async (userid) => {
 const findUser = async (username) => {
   const query = `SELECT * FROM users WHERE username = ?`;
   const results = await db.promise().query(query, [username]);
-  const userGroups = await findUserGroups(results[0][0].id);
-  const data = mergeResults([results[0][0]], userGroups);
-  return data[0];
+  // console.log(results[0])
+
+  if(results[0].length) {
+    const userGroups = await findUserGroups(results[0][0].id);
+    const data = mergeResults([results[0][0]], userGroups);
+    return data[0]
+  } else {
+    return results[0].length
+  }
+  // console.log(results[0])
+  // return data[0];
 };
 
 exports.signup = async (req, res, next) => {
@@ -90,8 +98,8 @@ exports.login = async (req, res) => {
   try {
     const user = await findUser(username);
 
-    if (!user)
-      return res.status(401).json({ message: "Invalid username or password." });
+    if (!user) return res.status(401).json({ message: "Invalid username or password." });
+     
     if (await argon2.verify(user.password, password)) {
       createSendToken(user, 200, req, res);
     } else {
@@ -139,7 +147,6 @@ exports.protectedRoute = async (req, res, next) => {
     });
   }
   req.user = currentUser;
-  res.locals.user = currentUser;
   next();
 };
 
